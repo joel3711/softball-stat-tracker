@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rec Softball Stat Tracker</title>
+  <style>
+    :root {
+      --bg: #121826;
+      --card: #1b2436;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --border: #334155;
+      --success: #16a34a;
+      --danger: #dc2626;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 16px; max-width: 500px; margin: 0 auto; }
+
+    h1, h2 { text-align: center; margin-bottom: 12px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+
+    /* Buttons */
+    button { background: var(--accent); color: var(--text); border: none; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: 0.1s; }
+    button:active { transform: scale(0.97); }
+    .btn-secondary { background: #475569; }
+    .btn-danger { background: var(--danger); }
+    .btn-success { background: var(--success); }
+    .btn-full { width: 100%; margin-top: 8px; }
+
+    /* Inputs */
+    input { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border); background: #0f172a; color: var(--text); margin-bottom: 12px; font-size: 1rem; }
+
+    /* Setup Roster List */
+    .roster-input-group { display: flex; gap: 8px; margin-bottom: 8px; }
+    .roster-list { list-style: none; margin-bottom: 12px; }
+    .roster-item { display: flex; justify-content: space-between; align-items: center; background: #0f172a; padding: 8px 12px; border-radius: 6px; margin-bottom: 6px; font-size: 0.95rem; }
+
+    /* Live Game Screen */
+    .at-bat-header { text-align: center; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 12px; }
+    .batter-name { font-size: 1.4rem; font-weight: bold; color: #38bdf8; }
+    .on-deck { color: var(--muted); font-size: 0.85rem; margin-top: 4px; }
+
+    .grid-options { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+    .grid-btn { background: #334155; padding: 14px 4px; font-size: 0.9rem; text-align: center; }
+    .grid-btn.selected { background: var(--accent); outline: 2px solid #60a5fa; }
+
+    .steppers { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+    .stepper { background: #0f172a; padding: 8px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; }
+    .stepper-btn { padding: 4px 12px; font-size: 1.2rem; }
+
+    /* Summary Table */
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 0.85rem; }
+    th, td { padding: 8px 4px; text-align: center; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); text-align: center; }
+    td:first-child, th:first-child { text-align: left; }
+
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+
+  <!-- 1. SETUP SCREEN -->
+  <div id="setup-screen">
+    <h1>Game Setup</h1>
+    <div class="card">
+      <label style="font-size: 0.85rem; color: var(--muted);">Opponent Name</label>
+      <input type="text" id="opponent-input" placeholder="e.g. Pitches Be Crazy" value="Opponent">
+
+      <label style="font-size: 0.85rem; color: var(--muted);">Batting Lineup</label>
+      <div class="roster-input-group">
+        <input type="text" id="player-name-input" placeholder="Player Name" style="margin: 0;">
+        <button onclick="addPlayer()" style="width: auto;">Add</button>
+      </div>
+      <ul id="lineup-list" class="roster-list"></ul>
+
+      <button onclick="startGame()" class="btn-success btn-full">Start Game</button>
+    </div>
+  </div>
+
+  <!-- 2. LIVE GAME SCREEN -->
+  <div id="game-screen" class="hidden">
+    <h2>Dugout Tracker</h2>
+    
+    <div class="card">
+      <div class="at-bat-header">
+        <div style="font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;">Now Batting</div>
+        <div id="current-batter" class="batter-name">-</div>
+        <div id="on-deck-batter" class="on-deck">On Deck: -</div>
+      </div>
+
+      <!-- Play Results Grid -->
+      <div class="grid-options">
+        <button class="grid-btn" onclick="selectResult('1B', this)">1B</button>
+        <button class="grid-btn" onclick="selectResult('2B', this)">2B</button>
+        <button class="grid-btn" onclick="selectResult('3B', this)">3B</button>
+        <button class="grid-btn" onclick="selectResult('HR', this)">HR</button>
+        <button class="grid-btn" onclick="selectResult('BB', this)">BB</button>
+        <button class="grid-btn" onclick="selectResult('OUT', this)">OUT</button>
+        <button class="grid-btn" onclick="selectResult('K', this)">K</button>
+        <button class="grid-btn" onclick="selectResult('SAC', this)">SAC</button>
+        <button class="grid-btn" onclick="selectResult('ROE', this)">ROE</button>
+        <button class="grid-btn" onclick="selectResult('FC', this)">FC</button>
+      </div>
+
+      <!-- Runs & RBIs Steppers -->
+      <div class="steppers">
+        <div class="stepper">
+          <span style="font-size: 0.85rem;">Runs: <strong id="runs-val">0</strong></span>
+          <div>
+            <button class="stepper-btn btn-secondary" onclick="adjVal('runs', -1)">-</button>
+            <button class="stepper-btn btn-secondary" onclick="adjVal('runs', 1)">+</button>
+          </div>
+        </div>
+        <div class="stepper">
+          <span style="font-size: 0.85rem;">RBIs: <strong id="rbi-val">0</strong></span>
+          <div>
+            <button class="stepper-btn btn-secondary" onclick="adjVal('rbi', -1)">-</button>
+            <button class="stepper-btn btn-secondary" onclick="adjVal('rbi', 1)">+</button>
+          </div>
+        </div>
+      </div>
+
+      <button onclick="logAtBat()" class="btn-full" style="padding: 16px; font-size: 1.1rem;">Log At-Bat & Next Batter</button>
+      
+      <div style="display: flex; gap: 8px; margin-top: 8px;">
+        <button onclick="undoLast()" class="btn-secondary btn-full" style="margin:0;">Undo Last</button>
+        <button onclick="endGame()" class="btn-danger btn-full" style="margin:0;">End Game</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. SUMMARY & CSV EXPORT SCREEN -->
+  <div id="summary-screen" class="hidden">
+    <h1>Game Summary</h1>
+    <div class="card">
+      <div id="summary-meta" style="text-align: center; color: var(--muted); margin-bottom: 12px;"></div>
+      
+      <div style="max-height: 250px; overflow-y: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Player</th><th>AB</th><th>H</th><th>R</th><th>RBI</th><th>BB</th>
+            </tr>
+          </thead>
+          <tbody id="summary-table-body"></tbody>
+        </table>
+      </div>
+
+      <button onclick="exportCSV()" class="btn-success btn-full" style="padding: 16px; margin-top: 16px;">Export Game to CSV</button>
+      <button onclick="resetApp()" class="btn-secondary btn-full">Start New Game</button>
+    </div>
+  </div>
+
+  <script>
+    // App State
+    let players = [];
+    let currentBatterIdx = 0;
+    let selectedResult = null;
+    let runsScored = 0;
+    let rbis = 0;
+    let gameLogs = []; // Stores individual PA events
+    let gameDate = new Date().toISOString().split('T')[0];
+
+    // Setup functions
+    function addPlayer() {
+      const input = document.getElementById('player-name-input');
+      const name = input.value.trim();
+      if (name) {
+        players.push(name);
+        input.value = '';
+        renderLineup();
+      }
+    }
+
+    function renderLineup() {
+      const list = document.getElementById('lineup-list');
+      list.innerHTML = players.map((p, i) => `
+        <li class="roster-item">
+          <span>${i + 1}. ${p}</span>
+          <span onclick="removePlayer(${i})" style="color: var(--danger); cursor: pointer; font-weight:bold;">✕</span>
+        </li>
+      `).join('');
+    }
+
+    function removePlayer(idx) {
+      players.splice(idx, 1);
+      renderLineup();
+    }
+
+    function startGame() {
+      if (players.length === 0) {
+        alert("Please add at least one player to the lineup.");
+        return;
+      }
+      document.getElementById('setup-screen').classList.add('hidden');
+      document.getElementById('game-screen').classList.remove('hidden');
+      updateBatterDisplay();
+    }
+
+    // Live Game functions
+    function updateBatterDisplay() {
+      document.getElementById('current-batter').innerText = `#${currentBatterIdx + 1} ${players[currentBatterIdx]}`;
+      const nextIdx = (currentBatterIdx + 1) % players.length;
+      document.getElementById('on-deck-batter').innerText = `On Deck: #${nextIdx + 1} ${players[nextIdx]}`;
+      
+      // Reset inputs
+      selectedResult = null;
+      runsScored = 0;
+      rbis = 0;
+      document.getElementById('runs-val').innerText = '0';
+      document.getElementById('rbi-val').innerText = '0';
+      document.querySelectorAll('.grid-btn').forEach(btn => btn.classList.remove('selected'));
+    }
+
+    function selectResult(result, btn) {
+      selectedResult = result;
+      document.querySelectorAll('.grid-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+
+      // Auto-increment RBI on HR if not set
+      if (result === 'HR' && rbis === 0) {
+        adjVal('rbi', 1);
+        adjVal('runs', 1);
+      }
+    }
+
+    function adjVal(type, amount) {
+      if (type === 'runs') {
+        runsScored = Math.max(0, runsScored + amount);
+        document.getElementById('runs-val').innerText = runsScored;
+      } else {
+        rbis = Math.max(0, rbis + amount);
+        document.getElementById('rbi-val').innerText = rbis;
+      }
+    }
+
+    function logAtBat() {
+      if (!selectedResult) {
+        alert("Please select an outcome for the at-bat (e.g., 1B, OUT).");
+        return;
+      }
+
+      gameLogs.push({
+        player: players[currentBatterIdx],
+        result: selectedResult,
+        runs: runsScored,
+        rbi: rbis
+      });
+
+      // Advance lineup
+      currentBatterIdx = (currentBatterIdx + 1) % players.length;
+      updateBatterDisplay();
+    }
+
+    function undoLast() {
+      if (gameLogs.length === 0) return;
+      gameLogs.pop();
+      currentBatterIdx = (currentBatterIdx - 1 + players.length) % players.length;
+      updateBatterDisplay();
+    }
+
+    function endGame() {
+      if (gameLogs.length === 0 && !confirm("No stats logged. End game anyway?")) return;
+      
+      document.getElementById('game-screen').classList.add('hidden');
+      document.getElementById('summary-screen').classList.remove('hidden');
+      
+      const opponent = document.getElementById('opponent-input').value || 'Opponent';
+      document.getElementById('summary-meta').innerText = `vs. ${opponent} • ${gameDate}`;
+
+      renderSummaryTable();
+    }
+
+    // Box Score Aggregator
+    function getAggregatedStats() {
+      const totals = {};
+      players.forEach(p => {
+        totals[p] = { PA: 0, AB: 0, R: 0, H: 0, '1B': 0, '2B': 0, '3B': 0, HR: 0, RBI: 0, BB: 0, K: 0, SAC: 0, ROE: 0, FC: 0 };
+      });
+
+      gameLogs.forEach(log => {
+        const stats = totals[log.player];
+        if (!stats) return;
+
+        stats.PA += 1;
+        stats.R += log.runs;
+        stats.RBI += log.rbi;
+
+        const res = log.result;
+        if (res === '1B') { stats.H++; stats['1B']++; stats.AB++; }
+        else if (res === '2B') { stats.H++; stats['2B']++; stats.AB++; }
+        else if (res === '3B') { stats.H++; stats['3B']++; stats.AB++; }
+        else if (res === 'HR') { stats.H++; stats['HR']++; stats.AB++; }
+        else if (res === 'OUT') { stats.AB++; }
+        else if (res === 'K') { stats.K++; stats.AB++; }
+        else if (res === 'ROE') { stats.ROE++; stats.AB++; }
+        else if (res === 'FC') { stats.FC++; stats.AB++; }
+        else if (res === 'BB') { stats.BB++; }
+        else if (res === 'SAC') { stats.SAC++; }
+      });
+
+      return totals;
+    }
+
+    function renderSummaryTable() {
+      const totals = getAggregatedStats();
+      const tbody = document.getElementById('summary-table-body');
+      tbody.innerHTML = Object.keys(totals).map(p => {
+        const s = totals[p];
+        return `<tr>
+          <td>${p}</td>
+          <td>${s.AB}</td>
+          <td>${s.H}</td>
+          <td>${s.R}</td>
+          <td>${s.RBI}</td>
+          <td>${s.BB}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    // CSV Generation & Download
+    function exportCSV() {
+      const opponent = document.getElementById('opponent-input').value || 'Opponent';
+      const totals = getAggregatedStats();
+      
+      let csvContent = "data:text/csv;charset=utf-8,";
+      // CSV Header Row
+      csvContent += "Date,Opponent,Player,PA,AB,R,H,1B,2B,3B,HR,RBI,BB,K,SAC,ROE,FC\n";
+
+      // Populate Data Rows
+      Object.keys(totals).forEach(p => {
+        const s = totals[p];
+        const row = [
+          gameDate,
+          `"${opponent}"`,
+          `"${p}"`,
+          s.PA, s.AB, s.R, s.H, s['1B'], s['2B'], s['3B'], s.HR, s.RBI, s.BB, s.K, s.SAC, s.ROE, s.FC
+        ];
+        csvContent += row.join(",") + "\n";
+      });
+
+      // Trigger Browser Download
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `softball_stats_${gameDate}_vs_${opponent.replace(/\s+/g, '_')}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function resetApp() {
+      if (confirm("Start a new game? Make sure you downloaded your CSV first!")) {
+        gameLogs = [];
+        currentBatterIdx = 0;
+        document.getElementById('summary-screen').classList.add('hidden');
+        document.getElementById('setup-screen').classList.remove('hidden');
+      }
+    }
+  </script>
+</body>
+</html>
