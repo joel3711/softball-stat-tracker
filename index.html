@@ -1,21 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<link rel="apple-touch-icon" href="./app-icon-v2.png">
-<!-- Link PWA manifest and mobile viewports -->
-<link rel="manifest" href="manifest.json">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-<script>
-  // Register the offline worker
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js');
-  }
-</script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rec Softball Stat Tracker</title>
+  
+  <!-- PWA & Mobile Icons -->
+  <link rel="apple-touch-icon" href="./app-icon-v2.png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
+
   <style>
     :root {
       --bg: #121826;
@@ -32,7 +33,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: var(--bg); color: var(--text); padding: 16px; max-width: 500px; margin: 0 auto; }
 
-    h1, h2 { text-align: center; margin-bottom: 12px; }
+    h1, h2, h3 { text-align: center; margin-bottom: 12px; }
     .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
 
     /* Buttons */
@@ -46,28 +47,39 @@
     /* Inputs */
     input { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border); background: #0f172a; color: var(--text); margin-bottom: 12px; font-size: 1rem; }
 
-    /* Setup Roster List */
+    /* Roster Setup */
     .roster-input-group { display: flex; gap: 8px; margin-bottom: 8px; }
     .roster-list { list-style: none; margin-bottom: 12px; }
     .roster-item { display: flex; justify-content: space-between; align-items: center; background: #0f172a; padding: 8px 12px; border-radius: 6px; margin-bottom: 6px; font-size: 0.95rem; }
 
-    /* Live Game Screen */
-    .at-bat-header { text-align: center; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 12px; }
-    .batter-name { font-size: 1.4rem; font-weight: bold; color: #38bdf8; }
+    /* At-Bat Header */
+    .at-bat-header { text-align: center; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 16px; }
+    .batter-name { font-size: 1.5rem; font-weight: bold; color: #38bdf8; }
     .on-deck { color: var(--muted); font-size: 0.85rem; margin-top: 4px; }
 
-    .grid-options { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
-    .grid-btn { background: #334155; padding: 14px 4px; font-size: 0.9rem; text-align: center; }
-    .grid-btn.selected { background: var(--accent); outline: 2px solid #60a5fa; }
+    /* Custom 3-Row Outcome Grids */
+    .outcome-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+    .grid-row { display: grid; gap: 10px; }
+    .row-4 { grid-template-columns: repeat(4, 1fr); }
+    .row-3 { grid-template-columns: repeat(3, 1fr); }
+    
+    .grid-btn { background: #334155; padding: 18px 4px; font-size: 1.1rem; text-align: center; font-weight: bold; }
+    .grid-btn:active { background: var(--accent); }
 
-    .steppers { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
-    .stepper { background: #0f172a; padding: 8px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; }
-    .stepper-btn { padding: 4px 12px; font-size: 1.2rem; }
+    /* Modal Styling */
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; padding: 16px; z-index: 100; }
+    .modal-content { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; width: 100%; max-width: 400px; }
+    
+    .chip-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 16px 0; }
+    .chip-btn { background: #334155; padding: 16px 0; font-size: 1.2rem; }
+
+    .runner-chip { display: flex; justify-content: space-between; padding: 12px; background: #0f172a; border-radius: 6px; margin-bottom: 8px; cursor: pointer; font-size: 1rem; }
+    .runner-chip.selected { background: var(--success); }
 
     /* Summary Table */
-    table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 0.85rem; }
-    th, td { padding: 8px 4px; text-align: center; border-bottom: 1px solid var(--border); }
-    th { color: var(--muted); text-align: center; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 0.8rem; }
+    th, td { padding: 6px 2px; text-align: center; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); }
     td:first-child, th:first-child { text-align: left; }
 
     .hidden { display: none; }
@@ -104,58 +116,84 @@
         <div id="on-deck-batter" class="on-deck">On Deck: -</div>
       </div>
 
-      <!-- Play Results Grid -->
-      <div class="grid-options">
-        <button class="grid-btn" onclick="selectResult('1B', this)">1B</button>
-        <button class="grid-btn" onclick="selectResult('2B', this)">2B</button>
-        <button class="grid-btn" onclick="selectResult('3B', this)">3B</button>
-        <button class="grid-btn" onclick="selectResult('HR', this)">HR</button>
-        <button class="grid-btn" onclick="selectResult('BB', this)">BB</button>
-        <button class="grid-btn" onclick="selectResult('OUT', this)">OUT</button>
-        <button class="grid-btn" onclick="selectResult('K', this)">K</button>
-        <button class="grid-btn" onclick="selectResult('SAC', this)">SAC</button>
-        <button class="grid-btn" onclick="selectResult('ROE', this)">ROE</button>
-        <button class="grid-btn" onclick="selectResult('FC', this)">FC</button>
-      </div>
-
-      <!-- Runs & RBIs Steppers -->
-      <div class="steppers">
-        <div class="stepper">
-          <span style="font-size: 0.85rem;">Runs: <strong id="runs-val">0</strong></span>
-          <div>
-            <button class="stepper-btn btn-secondary" onclick="adjVal('runs', -1)">-</button>
-            <button class="stepper-btn btn-secondary" onclick="adjVal('runs', 1)">+</button>
-          </div>
+      <!-- Play Results Grid (Strict 3-Row Layout) -->
+      <div class="outcome-grid">
+        <!-- Row 1: 1B, 2B, 3B, HR -->
+        <div class="grid-row row-4">
+          <button class="grid-btn" onclick="handleOutcomeSelect('1B')">1B</button>
+          <button class="grid-btn" onclick="handleOutcomeSelect('2B')">2B</button>
+          <button class="grid-btn" onclick="handleOutcomeSelect('3B')">3B</button>
+          <button class="grid-btn" onclick="handleOutcomeSelect('HR')">HR</button>
         </div>
-        <div class="stepper">
-          <span style="font-size: 0.85rem;">RBIs: <strong id="rbi-val">0</strong></span>
-          <div>
-            <button class="stepper-btn btn-secondary" onclick="adjVal('rbi', -1)">-</button>
-            <button class="stepper-btn btn-secondary" onclick="adjVal('rbi', 1)">+</button>
-          </div>
+        <!-- Row 2: BB, OUT, K -->
+        <div class="grid-row row-3">
+          <button class="grid-btn" onclick="handleOutcomeSelect('BB')">BB</button>
+          <button class="grid-btn" onclick="handleOutcomeSelect('OUT')">OUT</button>
+          <button class="grid-btn" onclick="handleOutcomeSelect('K')">K</button>
+        </div>
+        <!-- Row 3: SAC, ROE, FC -->
+        <div class="grid-row row-3">
+          <button class="grid-btn" onclick="handleOutcomeSelect('SAC')">SAC</button>
+          <button class="grid-btn" onclick="handleOutcomeSelect('ROE')">ROE</button>
+          <button class="grid-btn" onclick="handleOutcomeSelect('FC')">FC</button>
         </div>
       </div>
-
-      <button onclick="logAtBat()" class="btn-full" style="padding: 16px; font-size: 1.1rem;">Log At-Bat & Next Batter</button>
       
-      <div style="display: flex; gap: 8px; margin-top: 8px;">
+      <div style="display: flex; gap: 8px; margin-top: 12px;">
         <button onclick="undoLast()" class="btn-secondary btn-full" style="margin:0;">Undo Last</button>
         <button onclick="endGame()" class="btn-danger btn-full" style="margin:0;">End Game</button>
       </div>
     </div>
   </div>
 
+  <!-- MODAL 1: SELECT RBIs (0-4) -->
+  <div id="rbi-count-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <h3 id="rbi-modal-title">How many RBIs?</h3>
+      <div class="chip-grid">
+        <button class="chip-btn" onclick="submitRbiCount(0)">0</button>
+        <button class="chip-btn" onclick="submitRbiCount(1)">1</button>
+        <button class="chip-btn" onclick="submitRbiCount(2)">2</button>
+        <button class="chip-btn" onclick="submitRbiCount(3)">3</button>
+        <button class="chip-btn" onclick="submitRbiCount(4)">4</button>
+      </div>
+      <button onclick="closeModals()" class="btn-secondary btn-full">Cancel</button>
+    </div>
+  </div>
+
+  <!-- MODAL 2: NON-RBI RUN SCORED? (FOR ROE & FC) -->
+  <div id="non-rbi-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <h3>Did a run score on this play?</h3>
+      <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 16px; text-align: center;">(No RBI will be awarded to the batter)</p>
+      <div style="display: flex; gap: 12px;">
+        <button onclick="handleNonRbiResponse(false)" class="btn-secondary btn-full">No</button>
+        <button onclick="handleNonRbiResponse(true)" class="btn-success btn-full">Yes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: WHO SCORED THE RUN(S)? -->
+  <div id="who-scored-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <h3>Who Scored?</h3>
+      <p id="who-scored-subtitle" style="font-size: 0.85rem; color: var(--muted); margin-bottom: 12px; text-align: center;">Select runner(s):</p>
+      <div id="runner-list"></div>
+      <button onclick="confirmRunners()" class="btn-success btn-full" style="margin-top: 12px;">Confirm & Save</button>
+    </div>
+  </div>
+
   <!-- 3. SUMMARY & CSV EXPORT SCREEN -->
   <div id="summary-screen" class="hidden">
-    <h1>Game Summary</h1>
+    <h1>Game Box Score</h1>
     <div class="card">
       <div id="summary-meta" style="text-align: center; color: var(--muted); margin-bottom: 12px;"></div>
       
-      <div style="max-height: 250px; overflow-y: auto;">
+      <div style="max-height: 280px; overflow-y: auto;">
         <table>
           <thead>
             <tr>
-              <th>Player</th><th>AB</th><th>H</th><th>R</th><th>RBI</th><th>BB</th>
+              <th>Player</th><th>AB</th><th>H</th><th>R</th><th>RBI</th><th>BB</th><th>AVG</th><th>OPS</th>
             </tr>
           </thead>
           <tbody id="summary-table-body"></tbody>
@@ -171,10 +209,10 @@
     // App State
     let players = [];
     let currentBatterIdx = 0;
-    let selectedResult = null;
-    let runsScored = 0;
-    let rbis = 0;
-    let gameLogs = []; // Stores individual PA events
+    let currentOutcome = null;
+    let pendingRbis = 0;
+    let selectedScorers = [];
+    let gameLogs = []; 
     let gameDate = new Date().toISOString().split('T')[0];
 
     // Setup functions
@@ -213,54 +251,115 @@
       updateBatterDisplay();
     }
 
-    // Live Game functions
     function updateBatterDisplay() {
       document.getElementById('current-batter').innerText = `#${currentBatterIdx + 1} ${players[currentBatterIdx]}`;
       const nextIdx = (currentBatterIdx + 1) % players.length;
       document.getElementById('on-deck-batter').innerText = `On Deck: #${nextIdx + 1} ${players[nextIdx]}`;
       
-      // Reset inputs
-      selectedResult = null;
-      runsScored = 0;
-      rbis = 0;
-      document.getElementById('runs-val').innerText = '0';
-      document.getElementById('rbi-val').innerText = '0';
-      document.querySelectorAll('.grid-btn').forEach(btn => btn.classList.remove('selected'));
+      currentOutcome = null;
+      pendingRbis = 0;
+      selectedScorers = [];
     }
 
-    function selectResult(result, btn) {
-      selectedResult = result;
-      document.querySelectorAll('.grid-btn').forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
+    // Direct Outcome Selector Handler
+    function handleOutcomeSelect(outcome) {
+      currentOutcome = outcome;
 
-      // Auto-increment RBI on HR if not set
-      if (result === 'HR' && rbis === 0) {
-        adjVal('rbi', 1);
-        adjVal('runs', 1);
-      }
-    }
-
-    function adjVal(type, amount) {
-      if (type === 'runs') {
-        runsScored = Math.max(0, runsScored + amount);
-        document.getElementById('runs-val').innerText = runsScored;
-      } else {
-        rbis = Math.max(0, rbis + amount);
-        document.getElementById('rbi-val').innerText = rbis;
-      }
-    }
-
-    function logAtBat() {
-      if (!selectedResult) {
-        alert("Please select an outcome for the at-bat (e.g., 1B, OUT).");
+      // 1. K & OUT: No RBI/Run prompts
+      if (outcome === 'K' || outcome === 'OUT') {
+        commitAtBat(0, []);
         return;
       }
 
+      // 2. 1B, 2B, 3B, HR, BB, SAC: Prompt 0, 1, 2, 3, or 4 RBIs
+      if (['1B', '2B', '3B', 'HR', 'BB', 'SAC'].includes(outcome)) {
+        document.getElementById('rbi-modal-title').innerText = `${outcome} - How many RBIs?`;
+        document.getElementById('rbi-count-modal').classList.remove('hidden');
+        return;
+      }
+
+      // 3. ROE, FC: Prompt Non-RBI Run Scored (Yes/No)
+      if (['ROE', 'FC'].includes(outcome)) {
+        document.getElementById('non-rbi-modal').classList.remove('hidden');
+        return;
+      }
+    }
+
+    // RBI Count Selection
+    function submitRbiCount(count) {
+      pendingRbis = count;
+      document.getElementById('rbi-count-modal').classList.add('hidden');
+
+      if (count === 0) {
+        commitAtBat(0, []);
+      } else {
+        openWhoScoredModal(count);
+      }
+    }
+
+    // Non-RBI Run Selection (ROE / FC)
+    function handleNonRbiResponse(runScored) {
+      document.getElementById('non-rbi-modal').classList.add('hidden');
+      
+      if (!runScored) {
+        commitAtBat(0, []);
+      } else {
+        pendingRbis = 0; // Ensures 0 RBIs are logged to batter
+        openWhoScoredModal(1);
+      }
+    }
+
+    // Who Scored Modal Launcher
+    function openWhoScoredModal(expectedRunners) {
+      const list = document.getElementById('runner-list');
+      selectedScorers = [];
+
+      // Auto-select current batter if HR
+      if (currentOutcome === 'HR') {
+        selectedScorers.push(players[currentBatterIdx]);
+      }
+
+      document.getElementById('who-scored-subtitle').innerText = `Select the player(s) who scored:`;
+
+      list.innerHTML = players.map(p => `
+        <div class="runner-chip ${selectedScorers.includes(p) ? 'selected' : ''}" onclick="toggleRunner('${p}', this)">
+          <span>${p}</span>
+          <span class="chk">${selectedScorers.includes(p) ? '✓' : ''}</span>
+        </div>
+      `).join('');
+
+      document.getElementById('who-scored-modal').classList.remove('hidden');
+    }
+
+    function toggleRunner(player, el) {
+      if (selectedScorers.includes(player)) {
+        selectedScorers = selectedScorers.filter(p => p !== player);
+        el.classList.remove('selected');
+        el.querySelector('.chk').innerText = '';
+      } else {
+        selectedScorers.push(player);
+        el.classList.add('selected');
+        el.querySelector('.chk').innerText = '✓';
+      }
+    }
+
+    function confirmRunners() {
+      document.getElementById('who-scored-modal').classList.add('hidden');
+      commitAtBat(pendingRbis, selectedScorers);
+    }
+
+    function closeModals() {
+      document.getElementById('rbi-count-modal').classList.add('hidden');
+      document.getElementById('non-rbi-modal').classList.add('hidden');
+      document.getElementById('who-scored-modal').classList.add('hidden');
+    }
+
+    function commitAtBat(rbis, scorers) {
       gameLogs.push({
-        player: players[currentBatterIdx],
-        result: selectedResult,
-        runs: runsScored,
-        rbi: rbis
+        batter: players[currentBatterIdx],
+        result: currentOutcome,
+        rbi: rbis,
+        scorers: scorers
       });
 
       // Advance lineup
@@ -295,22 +394,29 @@
       });
 
       gameLogs.forEach(log => {
-        const stats = totals[log.player];
+        const stats = totals[log.batter];
         if (!stats) return;
 
         stats.PA += 1;
-        stats.R += log.runs;
         stats.RBI += log.rbi;
 
+        // Assign run to the runner who scored
+        log.scorers.forEach(scorer => {
+          if (totals[scorer]) totals[scorer].R += 1;
+        });
+
         const res = log.result;
-        if (res === '1B') { stats.H++; stats['1B']++; stats.AB++; }
-        else if (res === '2B') { stats.H++; stats['2B']++; stats.AB++; }
-        else if (res === '3B') { stats.H++; stats['3B']++; stats.AB++; }
-        else if (res === 'HR') { stats.H++; stats['HR']++; stats.AB++; }
-        else if (res === 'OUT') { stats.AB++; }
-        else if (res === 'K') { stats.K++; stats.AB++; }
-        else if (res === 'ROE') { stats.ROE++; stats.AB++; }
-        else if (res === 'FC') { stats.FC++; stats.AB++; }
+        if (['1B', '2B', '3B', 'HR'].includes(res)) { 
+          stats.H++; 
+          stats[res]++; 
+          stats.AB++; 
+        }
+        else if (['OUT', 'K', 'ROE', 'FC'].includes(res)) { 
+          stats.AB++; 
+          if (res === 'K') stats.K++; 
+          if (res === 'ROE') stats.ROE++; 
+          if (res === 'FC') stats.FC++; 
+        }
         else if (res === 'BB') { stats.BB++; }
         else if (res === 'SAC') { stats.SAC++; }
       });
@@ -321,8 +427,15 @@
     function renderSummaryTable() {
       const totals = getAggregatedStats();
       const tbody = document.getElementById('summary-table-body');
+      
       tbody.innerHTML = Object.keys(totals).map(p => {
         const s = totals[p];
+        const tb = (s['1B'] * 1) + (s['2B'] * 2) + (s['3B'] * 3) + (s.HR * 4);
+        const avg = s.AB > 0 ? (s.H / s.AB).toFixed(3) : '.000';
+        const obp = s.PA > 0 ? ((s.H + s.BB) / s.PA).toFixed(3) : '.000';
+        const slg = s.AB > 0 ? (tb / s.AB).toFixed(3) : '.000';
+        const ops = (parseFloat(obp) + parseFloat(slg)).toFixed(3);
+
         return `<tr>
           <td>${p}</td>
           <td>${s.AB}</td>
@@ -330,6 +443,8 @@
           <td>${s.R}</td>
           <td>${s.RBI}</td>
           <td>${s.BB}</td>
+          <td>${avg.replace(/^0/, '')}</td>
+          <td>${ops}</td>
         </tr>`;
       }).join('');
     }
@@ -340,22 +455,25 @@
       const totals = getAggregatedStats();
       
       let csvContent = "data:text/csv;charset=utf-8,";
-      // CSV Header Row
-      csvContent += "Date,Opponent,Player,PA,AB,R,H,1B,2B,3B,HR,RBI,BB,K,SAC,ROE,FC\n";
+      csvContent += "Date,Opponent,Player,PA,AB,R,H,1B,2B,3B,HR,RBI,BB,K,SAC,ROE,FC,TB,AVG,OBP,SLG,OPS\n";
 
-      // Populate Data Rows
       Object.keys(totals).forEach(p => {
         const s = totals[p];
+        const tb = (s['1B'] * 1) + (s['2B'] * 2) + (s['3B'] * 3) + (s.HR * 4);
+        const avg = s.AB > 0 ? (s.H / s.AB).toFixed(3) : '0';
+        const obp = s.PA > 0 ? ((s.H + s.BB) / s.PA).toFixed(3) : '0';
+        const slg = s.AB > 0 ? (tb / s.AB).toFixed(3) : '0';
+        const ops = (parseFloat(obp) + parseFloat(slg)).toFixed(3);
+
         const row = [
           gameDate,
           `"${opponent}"`,
           `"${p}"`,
-          s.PA, s.AB, s.R, s.H, s['1B'], s['2B'], s['3B'], s.HR, s.RBI, s.BB, s.K, s.SAC, s.ROE, s.FC
+          s.PA, s.AB, s.R, s.H, s['1B'], s['2B'], s['3B'], s.HR, s.RBI, s.BB, s.K, s.SAC, s.ROE, s.FC, tb, avg, obp, slg, ops
         ];
         csvContent += row.join(",") + "\n";
       });
 
-      // Trigger Browser Download
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
       link.setAttribute("href", encodedUri);
