@@ -108,7 +108,43 @@
     /* Roster Setup */
     .roster-input-group { display: flex; gap: 8px; margin-bottom: 8px; }
     .roster-list { list-style: none; margin-bottom: 12px; flex: 1; overflow-y: auto; }
-    .roster-item { display: flex; justify-content: space-between; align-items: center; background: #0f172a; padding: 10px 14px; border-radius: 8px; margin-bottom: 6px; font-size: 1rem; }
+    .roster-item { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      background: #0f172a; 
+      padding: 10px 12px; 
+      border-radius: 8px; 
+      margin-bottom: 6px; 
+      font-size: 0.95rem;
+      transition: background-color 0.2s ease;
+    }
+    
+    .roster-actions { display: flex; align-items: center; gap: 6px; }
+    .move-btn { background: #334155; color: var(--text); padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; }
+    .move-placeholder { visibility: hidden; pointer-events: none; }
+    .remove-btn { color: var(--danger); cursor: pointer; font-weight: bold; padding: 0 4px; font-size: 1.1rem; }
+
+    /* Swap Animations & Visual Feedback */
+    .slide-up {
+      animation: slideUpAnim 0.15s ease-out forwards;
+      background-color: var(--accent) !important;
+    }
+
+    .slide-down {
+      animation: slideDownAnim 0.15s ease-out forwards;
+      background-color: var(--accent) !important;
+    }
+
+    @keyframes slideUpAnim {
+      0% { transform: translateY(30px); opacity: 0.5; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes slideDownAnim {
+      0% { transform: translateY(-30px); opacity: 0.5; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
 
     /* At-Bat Header */
     .at-bat-header { text-align: center; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 12px; }
@@ -134,15 +170,94 @@
     }
     .grid-btn:active { background: var(--accent); }
 
+    /* Horizontal Compact Game Log Ticker */
+    .game-log-card {
+      margin-top: 8px;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      overflow: hidden;
+    }
+
+    .game-log-title {
+      font-size: 0.7rem;
+      font-weight: bold;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+      border-right: 1px solid var(--border);
+      padding-right: 8px;
+    }
+
+    .game-log-list {
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow-x: auto;
+      white-space: nowrap;
+      scrollbar-width: none; /* Hide scrollbar Firefox */
+      -ms-overflow-style: none; /* Hide scrollbar IE/Edge */
+    }
+
+    .game-log-list::-webkit-scrollbar {
+      display: none; /* Hide scrollbar Chrome/Safari */
+    }
+
+    .game-log-item {
+      font-size: 0.85rem;
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .game-log-item:first-child {
+      color: #38bdf8; /* Highlight the most recent action */
+      font-weight: 600;
+    }
+
+    .game-log-divider {
+      color: var(--border);
+      font-size: 0.8rem;
+    }
+
+    .game-log-empty {
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-style: italic;
+    }
+
     /* Modal Styling */
     .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; padding: 16px; z-index: 100; }
-    .modal-content { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; width: 100%; max-width: 400px; }
+    .modal-content { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; width: 100%; max-width: 420px; max-height: 90dvh; display: flex; flex-direction: column; }
     
     .chip-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 16px 0; }
     .chip-btn { background: #334155; padding: 18px 0; font-size: 1.3rem; border-radius: 10px; }
 
-    .runner-chip { display: flex; justify-content: space-between; padding: 14px; background: #0f172a; border-radius: 8px; margin-bottom: 8px; cursor: pointer; font-size: 1.1rem; }
-    .runner-chip.selected { background: var(--success); }
+    /* Expanded & Compact Runner Chips inside Modal */
+    .runner-chip { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center;
+      padding: 10px 14px; 
+      background: #0f172a; 
+      border-radius: 8px; 
+      margin-bottom: 6px; 
+      cursor: pointer; 
+      font-size: 1rem; 
+      border: 1px solid transparent;
+    }
+    .runner-chip.selected { 
+      background: var(--success); 
+      border-color: #22c55e;
+      font-weight: bold;
+    }
 
     /* Summary Table */
     table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 0.85rem; }
@@ -162,7 +277,7 @@
       <label style="font-size: 0.85rem; color: var(--muted);">Opponent Name</label>
       <input type="text" id="opponent-input" placeholder="e.g. Pitches Be Crazy" value="Opponent">
 
-      <label style="font-size: 0.85rem; color: var(--muted);">Batting Lineup (Add Guest Below)</label>
+      <label style="font-size: 0.85rem; color: var(--muted);">Batting Lineup (Use ▼ ▲ to Reorder)</label>
       <div class="roster-input-group">
         <input type="text" id="player-name-input" placeholder="Add guest player..." style="margin: 0;">
         <button onclick="addPlayer()" style="width: auto; padding: 0 20px;">Add</button>
@@ -208,9 +323,17 @@
       </div>
       
       <div style="display: flex; gap: 10px;">
-        <button onclick="undoLast()" class="btn-secondary btn-full" style="margin:0; padding: 14px;">Undo Last</button>
-        <button onclick="endGame()" class="btn-danger btn-full" style="margin:0; padding: 14px;">End Game</button>
+        <button onclick="undoLast()" class="btn-secondary btn-full" style="margin:0; padding: 12px;">Undo Last</button>
+        <button onclick="endGame()" class="btn-danger btn-full" style="margin:0; padding: 12px;">End Game</button>
       </div>
+    </div>
+
+    <!-- Live Game Log Horizontal Bottom Ticker -->
+    <div class="game-log-card">
+      <div class="game-log-title">LOG</div>
+      <ul id="game-log-ticker" class="game-log-list">
+        <li class="game-log-empty">No plays logged yet.</li>
+      </ul>
     </div>
   </div>
 
@@ -245,9 +368,12 @@
   <div id="who-scored-modal" class="modal-overlay hidden">
     <div class="modal-content">
       <h3>Who Scored?</h3>
-      <p id="who-scored-subtitle" style="font-size: 0.85rem; color: var(--muted); margin-bottom: 12px; text-align: center;">Select runner(s):</p>
-      <div id="runner-list" style="max-height: 250px; overflow-y: auto;"></div>
-      <button onclick="confirmRunners()" class="btn-success btn-full" style="margin-top: 12px; padding: 16px;">Confirm & Save</button>
+      <p id="who-scored-subtitle" style="font-size: 0.85rem; color: var(--muted); margin-bottom: 10px; text-align: center;">Select runner(s):</p>
+      
+      <!-- Taller container allows seeing whole roster without scrolling -->
+      <div id="runner-list" style="max-height: 60dvh; flex: 1; overflow-y: auto; padding-right: 2px;"></div>
+      
+      <button onclick="confirmRunners()" class="btn-success btn-full" style="margin-top: 10px; padding: 14px;">Confirm & Save</button>
     </div>
   </div>
 
@@ -299,6 +425,10 @@
     let gameLogs = []; 
     let gameDate = new Date().toISOString().split('T')[0];
 
+    // Track recently moved player indices for animation
+    let lastSwappedUpIdx = null;
+    let lastSwappedDownIdx = null;
+
     // Initialize Lineup on Load
     window.addEventListener('DOMContentLoaded', () => {
       renderLineup();
@@ -310,6 +440,25 @@
         }
       });
     });
+
+    // Helper: Formats player names dynamically to handle first/last name duplicates
+    function getFormattedName(fullName) {
+      const parts = fullName.trim().split(' ');
+      if (parts.length < 2) return fullName;
+
+      const firstName = parts[0];
+      const lastName = parts.slice(1).join(' ');
+
+      // Check if any other player shares the same last name or first name
+      const hasDuplicateLastName = players.some(p => p !== fullName && p.trim().split(' ').slice(1).join(' ') === lastName);
+      const hasDuplicateFirstName = players.some(p => p !== fullName && p.trim().split(' ')[0] === firstName);
+
+      if (hasDuplicateLastName || hasDuplicateFirstName) {
+        return fullName; // Return full name if shared first or last name
+      }
+
+      return lastName; // Default to last name only
+    }
 
     // Setup functions
     function addPlayer() {
@@ -324,12 +473,55 @@
 
     function renderLineup() {
       const list = document.getElementById('lineup-list');
-      list.innerHTML = players.map((p, i) => `
-        <li class="roster-item">
-          <span>${i + 1}. ${p}</span>
-          <span onclick="removePlayer(${i})" style="color: var(--danger); cursor: pointer; font-weight:bold;">✕</span>
-        </li>
-      `).join('');
+      list.innerHTML = players.map((p, i) => {
+        let animClass = '';
+        if (i === lastSwappedUpIdx) animClass = 'slide-up';
+        if (i === lastSwappedDownIdx) animClass = 'slide-down';
+
+        const downBtn = i < players.length - 1 
+          ? `<button class="move-btn" onclick="movePlayer(${i}, 1)">▼</button>`
+          : `<button class="move-btn move-placeholder">▼</button>`;
+
+        const upBtn = i > 0 
+          ? `<button class="move-btn" onclick="movePlayer(${i}, -1)">▲</button>`
+          : `<button class="move-btn move-placeholder">▲</button>`;
+
+        return `
+          <li class="roster-item ${animClass}">
+            <span><strong>${i + 1}.</strong> ${p}</span>
+            <div class="roster-actions">
+              ${downBtn}
+              ${upBtn}
+              <span class="remove-btn" onclick="removePlayer(${i})">✕</span>
+            </div>
+          </li>
+        `;
+      }).join('');
+
+      // Clear animation tracking after render
+      lastSwappedUpIdx = null;
+      lastSwappedDownIdx = null;
+    }
+
+    function movePlayer(idx, direction) {
+      const newIndex = idx + direction;
+      if (newIndex < 0 || newIndex >= players.length) return;
+      
+      // Track indices for animation
+      if (direction === -1) { // Moving UP
+        lastSwappedUpIdx = newIndex;
+        lastSwappedDownIdx = idx;
+      } else { // Moving DOWN
+        lastSwappedDownIdx = newIndex;
+        lastSwappedUpIdx = idx;
+      }
+
+      // Swap positions
+      const temp = players[idx];
+      players[idx] = players[newIndex];
+      players[newIndex] = temp;
+      
+      renderLineup();
     }
 
     function removePlayer(idx) {
@@ -345,6 +537,7 @@
       document.getElementById('setup-screen').classList.add('hidden');
       document.getElementById('game-screen').classList.remove('hidden');
       updateBatterDisplay();
+      renderGameLogTicker();
     }
 
     function updateBatterDisplay() {
@@ -415,7 +608,7 @@
         selectedScorers.push(players[currentBatterIdx]);
       }
 
-      document.getElementById('who-scored-subtitle').innerText = `Select the player(s) who scored:`;
+      document.getElementById('who-scored-subtitle').innerText = `Select player(s) who scored (${expectedRunners} expected):`;
 
       list.innerHTML = players.map(p => `
         <div class="runner-chip ${selectedScorers.includes(p) ? 'selected' : ''}" onclick="toggleRunner('${p}', this)">
@@ -461,6 +654,7 @@
       // Advance lineup
       currentBatterIdx = (currentBatterIdx + 1) % players.length;
       updateBatterDisplay();
+      renderGameLogTicker();
     }
 
     function undoLast() {
@@ -468,6 +662,32 @@
       gameLogs.pop();
       currentBatterIdx = (currentBatterIdx - 1 + players.length) % players.length;
       updateBatterDisplay();
+      renderGameLogTicker();
+    }
+
+    function renderGameLogTicker() {
+      const ticker = document.getElementById('game-log-ticker');
+      if (gameLogs.length === 0) {
+        ticker.innerHTML = '<li class="game-log-empty">No plays logged yet.</li>';
+        return;
+      }
+
+      // Render reversed (most recent first) joined horizontally by "|"
+      ticker.innerHTML = gameLogs.slice().reverse().map((log, idx) => {
+        const displayName = getFormattedName(log.batter);
+        const rbiText = log.rbi > 0 ? ` (+${log.rbi})` : '';
+        const divider = idx < gameLogs.length - 1 ? '<span class="game-log-divider">|</span>' : '';
+        
+        return `
+          <li class="game-log-item">
+            <span>${displayName} - ${log.result}${rbiText}</span>
+            ${divider}
+          </li>
+        `;
+      }).join('');
+
+      // Auto scroll back to far left whenever a new play is logged
+      ticker.scrollLeft = 0;
     }
 
     function endGame() {
