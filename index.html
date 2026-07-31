@@ -53,7 +53,7 @@
       user-select: none;
     }
 
-    /* Re-enable text selection for input fields so you can still edit names */
+    /* Re-enable text selection for input fields */
     input {
       -webkit-user-select: auto;
       user-select: auto;
@@ -162,9 +162,9 @@
       <label style="font-size: 0.85rem; color: var(--muted);">Opponent Name</label>
       <input type="text" id="opponent-input" placeholder="e.g. Pitches Be Crazy" value="Opponent">
 
-      <label style="font-size: 0.85rem; color: var(--muted);">Batting Lineup</label>
+      <label style="font-size: 0.85rem; color: var(--muted);">Batting Lineup (Add Guest Below)</label>
       <div class="roster-input-group">
-        <input type="text" id="player-name-input" placeholder="Player Name" style="margin: 0;">
+        <input type="text" id="player-name-input" placeholder="Add guest player..." style="margin: 0;">
         <button onclick="addPlayer()" style="width: auto; padding: 0 20px;">Add</button>
       </div>
       <ul id="lineup-list" class="roster-list"></ul>
@@ -274,14 +274,42 @@
   </div>
 
   <script>
+    // Default Team Roster
+    const DEFAULT_ROSTER = [
+      "Joel Hoffler",
+      "Cori Hoffler",
+      "Anna Devereaux",
+      "Camden Sprinkle",
+      "Cody Martinez",
+      "Collin Sprinkle",
+      "Dawson Larrimore",
+      "Erin Edmoundson",
+      "Jacob Henderson",
+      "Joel Hall",
+      "Mya Horne",
+      "Riley Redmon"
+    ];
+
     // App State
-    let players = [];
+    let players = [...DEFAULT_ROSTER];
     let currentBatterIdx = 0;
     let currentOutcome = null;
     let pendingRbis = 0;
     let selectedScorers = [];
     let gameLogs = []; 
     let gameDate = new Date().toISOString().split('T')[0];
+
+    // Initialize Lineup on Load
+    window.addEventListener('DOMContentLoaded', () => {
+      renderLineup();
+      
+      // Allow 'Enter' key in input to add guest
+      document.getElementById('player-name-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          addPlayer();
+        }
+      });
+    });
 
     // Setup functions
     function addPlayer() {
@@ -555,6 +583,8 @@
       if (confirm("Start a new game? Make sure you downloaded your CSV first!")) {
         gameLogs = [];
         currentBatterIdx = 0;
+        players = [...DEFAULT_ROSTER]; // Reset back to standard roster
+        renderLineup();
         document.getElementById('summary-screen').classList.add('hidden');
         document.getElementById('setup-screen').classList.remove('hidden');
       }
