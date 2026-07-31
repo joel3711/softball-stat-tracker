@@ -433,7 +433,6 @@
     let pendingRbis = 0;
     let selectedScorers = [];
     let gameLogs = []; 
-    let gameDate = new Date().toISOString().split('T')[0];
 
     // Track recently moved player indices for animation
     let lastSwappedUpIdx = null;
@@ -459,15 +458,14 @@
       const firstName = parts[0];
       const lastName = parts.slice(1).join(' ');
 
-      // Check if any other player shares the same last name or first name
       const hasDuplicateLastName = players.some(p => p !== fullName && p.trim().split(' ').slice(1).join(' ') === lastName);
       const hasDuplicateFirstName = players.some(p => p !== fullName && p.trim().split(' ')[0] === firstName);
 
       if (hasDuplicateLastName || hasDuplicateFirstName) {
-        return fullName; // Return full name if shared first or last name
+        return fullName;
       }
 
-      return lastName; // Default to last name only
+      return lastName;
     }
 
     // Setup functions
@@ -508,7 +506,6 @@
         `;
       }).join('');
 
-      // Clear animation tracking after render
       lastSwappedUpIdx = null;
       lastSwappedDownIdx = null;
     }
@@ -517,16 +514,14 @@
       const newIndex = idx + direction;
       if (newIndex < 0 || newIndex >= players.length) return;
       
-      // Track indices for animation
-      if (direction === -1) { // Moving UP
+      if (direction === -1) {
         lastSwappedUpIdx = newIndex;
         lastSwappedDownIdx = idx;
-      } else { // Moving DOWN
+      } else {
         lastSwappedDownIdx = newIndex;
         lastSwappedUpIdx = idx;
       }
 
-      // Swap positions
       const temp = players[idx];
       players[idx] = players[newIndex];
       players[newIndex] = temp;
@@ -560,31 +555,26 @@
       selectedScorers = [];
     }
 
-    // Direct Outcome Selector Handler
     function handleOutcomeSelect(outcome) {
       currentOutcome = outcome;
 
-      // 1. K & OUT: No RBI/Run prompts
       if (outcome === 'K' || outcome === 'OUT') {
         commitAtBat(0, []);
         return;
       }
 
-      // 2. 1B, 2B, 3B, HR, BB, SAC: Prompt 0, 1, 2, 3, or 4 RBIs
       if (['1B', '2B', '3B', 'HR', 'BB', 'SAC'].includes(outcome)) {
         document.getElementById('rbi-modal-title').innerText = `${outcome} - How many RBIs?`;
         document.getElementById('rbi-count-modal').classList.remove('hidden');
         return;
       }
 
-      // 3. ROE, FC: Prompt Non-RBI Run Scored (Yes/No)
       if (['ROE', 'FC'].includes(outcome)) {
         document.getElementById('non-rbi-modal').classList.remove('hidden');
         return;
       }
     }
 
-    // RBI Count Selection
     function submitRbiCount(count) {
       pendingRbis = count;
       document.getElementById('rbi-count-modal').classList.add('hidden');
@@ -596,24 +586,21 @@
       }
     }
 
-    // Non-RBI Run Selection (ROE / FC)
     function handleNonRbiResponse(runScored) {
       document.getElementById('non-rbi-modal').classList.add('hidden');
       
       if (!runScored) {
         commitAtBat(0, []);
       } else {
-        pendingRbis = 0; // Ensures 0 RBIs are logged to batter
+        pendingRbis = 0;
         openWhoScoredModal(1);
       }
     }
 
-    // Who Scored Modal Launcher
     function openWhoScoredModal(expectedRunners) {
       const list = document.getElementById('runner-list');
       selectedScorers = [];
 
-      // Auto-select current batter if HR
       if (currentOutcome === 'HR') {
         selectedScorers.push(players[currentBatterIdx]);
       }
@@ -661,7 +648,6 @@
         scorers: scorers
       });
 
-      // Advance lineup
       currentBatterIdx = (currentBatterIdx + 1) % players.length;
       updateBatterDisplay();
       renderGameLogTicker();
@@ -682,7 +668,6 @@
         return;
       }
 
-      // Render reversed (most recent first) joined horizontally by "|"
       ticker.innerHTML = gameLogs.slice().reverse().map((log, idx) => {
         const displayName = getFormattedName(log.batter);
         const rbiText = log.rbi > 0 ? ` (+${log.rbi})` : '';
@@ -696,7 +681,6 @@
         `;
       }).join('');
 
-      // Auto scroll back to far left whenever a new play is logged
       ticker.scrollLeft = 0;
     }
 
@@ -707,7 +691,9 @@
       document.getElementById('summary-screen').classList.remove('hidden');
       
       const opponent = document.getElementById('opponent-input').value || 'Opponent';
-      document.getElementById('summary-meta').innerText = `vs. ${opponent} • ${gameDate}`;
+      const now = new Date();
+      const dateStr = `${now.getMonth() + 1}.${now.getDate()}.${now.getFullYear().toString().slice(-2)}`;
+      document.getElementById('summary-meta').innerText = `vs. ${opponent} • ${dateStr}`;
 
       renderSummaryTable();
     }
@@ -726,7 +712,6 @@
         stats.PA += 1;
         stats.RBI += log.rbi;
 
-        // Assign run to the runner who scored
         log.scorers.forEach(scorer => {
           if (totals[scorer]) totals[scorer].R += 1;
         });
@@ -775,27 +760,29 @@
       }).join('');
     }
 
-    // CSV Generation & Download
+    // CSV Generation & Download (Pure Raw Counting Stats Only)
     function exportCSV() {
-      const opponent = document.getElementById('opponent-input').value || 'Opponent';
+      const opponentInput = document.getElementById('opponent-input').value.trim() || 'opponent';
+      const cleanOpponent = opponentInput.toLowerCase().replace(/\s+/g, '_');
+      
+      const now = new Date();
+      const m = now.getMonth() + 1;
+      const d = now.getDate();
+      const yy = now.getFullYear().toString().slice(-2);
+      
+      const fileName = `${m}.${d}.${yy}.${cleanOpponent}.csv`;
       const totals = getAggregatedStats();
       
       let csvContent = "data:text/csv;charset=utf-8,";
-      csvContent += "Date,Opponent,Player,PA,AB,R,H,1B,2B,3B,HR,RBI,BB,K,SAC,ROE,FC,TB,AVG,OBP,SLG,OPS\n";
+      csvContent += "Player,PA,AB,R,H,1B,2B,3B,HR,RBI,BB,K,SAC,ROE,FC,TB\n";
 
       Object.keys(totals).forEach(p => {
         const s = totals[p];
         const tb = (s['1B'] * 1) + (s['2B'] * 2) + (s['3B'] * 3) + (s.HR * 4);
-        const avg = s.AB > 0 ? (s.H / s.AB).toFixed(3) : '0';
-        const obp = s.PA > 0 ? ((s.H + s.BB) / s.PA).toFixed(3) : '0';
-        const slg = s.AB > 0 ? (tb / s.AB).toFixed(3) : '0';
-        const ops = (parseFloat(obp) + parseFloat(slg)).toFixed(3);
 
         const row = [
-          gameDate,
-          `"${opponent}"`,
           `"${p}"`,
-          s.PA, s.AB, s.R, s.H, s['1B'], s['2B'], s['3B'], s.HR, s.RBI, s.BB, s.K, s.SAC, s.ROE, s.FC, tb, avg, obp, slg, ops
+          s.PA, s.AB, s.R, s.H, s['1B'], s['2B'], s['3B'], s.HR, s.RBI, s.BB, s.K, s.SAC, s.ROE, s.FC, tb
         ];
         csvContent += row.join(",") + "\n";
       });
@@ -803,7 +790,7 @@
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
       link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `softball_stats_${gameDate}_vs_${opponent.replace(/\s+/g, '_')}.csv`);
+      link.setAttribute("download", fileName);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -813,7 +800,7 @@
       if (confirm("Start a new game? Make sure you downloaded your CSV first!")) {
         gameLogs = [];
         currentBatterIdx = 0;
-        players = [...DEFAULT_ROSTER]; // Reset back to standard roster
+        players = [...DEFAULT_ROSTER];
         renderLineup();
         document.getElementById('summary-screen').classList.add('hidden');
         document.getElementById('setup-screen').classList.remove('hidden');
