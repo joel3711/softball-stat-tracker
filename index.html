@@ -68,62 +68,71 @@
     }
 
     body {
-      padding: 12px;
-      padding-top: max(12px, env(safe-area-inset-top));
-      padding-bottom: max(12px, env(safe-area-inset-bottom));
+      padding: 10px;
+      padding-top: max(10px, env(safe-area-inset-top));
+      padding-bottom: max(10px, env(safe-area-inset-bottom));
       display: flex;
       flex-direction: column;
     }
 
-    h1, h2, h3 { text-align: center; margin-bottom: 8px; }
+    h1, h2, h3 { text-align: center; margin-bottom: 6px; }
 
     .screen-container {
       display: flex;
       flex-direction: column;
       height: 100%;
       width: 100%;
+      overflow: hidden;
     }
 
     .card {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 16px;
-      padding: 16px;
+      padding: 12px;
       display: flex;
       flex-direction: column;
       flex: 1;
+      min-height: 0; /* Allows flex child scrolling without overflow */
     }
 
     /* Buttons */
-    button { background: var(--accent); color: var(--text); border: none; padding: 12px; border-radius: 10px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: 0.1s; }
+    button { background: var(--accent); color: var(--text); border: none; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 0.95rem; cursor: pointer; transition: 0.1s; }
     button:active { transform: scale(0.97); }
     .btn-secondary { background: #475569; }
     .btn-danger { background: var(--danger); }
     .btn-success { background: var(--success); }
-    .btn-full { width: 100%; margin-top: 8px; }
+    .btn-full { width: 100%; margin-top: 6px; }
 
     /* Inputs */
-    input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: #0f172a; color: var(--text); margin-bottom: 12px; font-size: 1rem; }
+    input { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); background: #0f172a; color: var(--text); margin-bottom: 6px; font-size: 0.9rem; }
 
-    /* Roster Setup */
-    .roster-input-group { display: flex; gap: 8px; margin-bottom: 8px; }
-    .roster-list { list-style: none; margin-bottom: 12px; flex: 1; overflow-y: auto; }
+    /* Roster Setup Compact Styling */
+    .roster-input-group { display: flex; gap: 6px; margin-bottom: 6px; }
+    .roster-list { 
+      list-style: none; 
+      margin-bottom: 8px; 
+      flex: 1; 
+      min-height: 0; 
+      overflow-y: auto; 
+      padding-right: 2px;
+    }
     .roster-item { 
       display: flex; 
       justify-content: space-between; 
       align-items: center; 
       background: #0f172a; 
-      padding: 10px 12px; 
-      border-radius: 8px; 
-      margin-bottom: 6px; 
-      font-size: 0.95rem;
+      padding: 5px 8px; 
+      border-radius: 6px; 
+      margin-bottom: 3px; 
+      font-size: 0.85rem;
       transition: background-color 0.2s ease;
     }
     
-    .roster-actions { display: flex; align-items: center; gap: 6px; }
-    .move-btn { background: #334155; color: var(--text); padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; }
+    .roster-actions { display: flex; align-items: center; gap: 4px; }
+    .move-btn { background: #334155; color: var(--text); padding: 3px 7px; border-radius: 4px; font-size: 0.75rem; }
     .move-placeholder { visibility: hidden; pointer-events: none; }
-    .remove-btn { color: var(--danger); cursor: pointer; font-weight: bold; padding: 0 4px; font-size: 1.1rem; }
+    .remove-btn { color: var(--danger); cursor: pointer; font-weight: bold; padding: 0 4px; font-size: 1rem; }
 
     /* Swap Animations & Visual Feedback */
     .slide-up {
@@ -137,23 +146,23 @@
     }
 
     @keyframes slideUpAnim {
-      0% { transform: translateY(30px); opacity: 0.5; }
+      0% { transform: translateY(20px); opacity: 0.5; }
       100% { transform: translateY(0); opacity: 1; }
     }
 
     @keyframes slideDownAnim {
-      0% { transform: translateY(-30px); opacity: 0.5; }
+      0% { transform: translateY(-20px); opacity: 0.5; }
       100% { transform: translateY(0); opacity: 1; }
     }
 
     /* At-Bat Header */
-    .at-bat-header { text-align: center; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 12px; }
-    .batter-name { font-size: 1.8rem; font-weight: bold; color: #38bdf8; }
-    .on-deck { color: var(--muted); font-size: 0.95rem; margin-top: 2px; }
+    .at-bat-header { text-align: center; border-bottom: 1px solid var(--border); padding-bottom: 6px; margin-bottom: 8px; }
+    .batter-name { font-size: 1.6rem; font-weight: bold; color: #38bdf8; }
+    .on-deck { color: var(--muted); font-size: 0.9rem; margin-top: 2px; }
 
     /* Full-Screen 3-Row Outcome Grids */
-    .outcome-grid { display: flex; flex-direction: column; gap: 10px; flex: 1; margin-bottom: 12px; }
-    .grid-row { display: grid; gap: 10px; flex: 1; }
+    .outcome-grid { display: flex; flex-direction: column; gap: 8px; flex: 1; margin-bottom: 8px; }
+    .grid-row { display: grid; gap: 8px; flex: 1; }
     .row-4 { grid-template-columns: repeat(4, 1fr); }
     .row-3 { grid-template-columns: repeat(3, 1fr); }
     
@@ -172,14 +181,14 @@
 
     /* Horizontal Compact Game Log Ticker */
     .game-log-card {
-      margin-top: 8px;
+      margin-top: 6px;
       background: #0f172a;
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 8px 12px;
+      padding: 6px 10px;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       overflow: hidden;
     }
 
@@ -191,7 +200,7 @@
       letter-spacing: 0.5px;
       white-space: nowrap;
       border-right: 1px solid var(--border);
-      padding-right: 8px;
+      padding-right: 6px;
     }
 
     .game-log-list {
@@ -235,22 +244,22 @@
 
     /* Modal Styling */
     .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; padding: 16px; z-index: 100; }
-    .modal-content { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; width: 100%; max-width: 420px; max-height: 90dvh; display: flex; flex-direction: column; }
+    .modal-content { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; width: 100%; max-width: 420px; max-height: 90dvh; display: flex; flex-direction: column; }
     
-    .chip-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 16px 0; }
-    .chip-btn { background: #334155; padding: 18px 0; font-size: 1.3rem; border-radius: 10px; }
+    .chip-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 12px 0; }
+    .chip-btn { background: #334155; padding: 16px 0; font-size: 1.2rem; border-radius: 10px; }
 
     /* Expanded & Compact Runner Chips inside Modal */
     .runner-chip { 
       display: flex; 
       justify-content: space-between; 
       align-items: center;
-      padding: 10px 14px; 
+      padding: 8px 12px; 
       background: #0f172a; 
       border-radius: 8px; 
-      margin-bottom: 6px; 
+      margin-bottom: 4px; 
       cursor: pointer; 
-      font-size: 1rem; 
+      font-size: 0.95rem; 
       border: 1px solid transparent;
     }
     .runner-chip.selected { 
@@ -260,8 +269,8 @@
     }
 
     /* Summary Table */
-    table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 0.85rem; }
-    th, td { padding: 8px 4px; text-align: center; border-bottom: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 0.85rem; }
+    th, td { padding: 6px 4px; text-align: center; border-bottom: 1px solid var(--border); }
     th { color: var(--muted); }
     td:first-child, th:first-child { text-align: left; }
 
@@ -272,29 +281,31 @@
 
   <!-- 1. SETUP SCREEN -->
   <div id="setup-screen" class="screen-container">
-    <h1>Game Setup</h1>
+    <h1 style="font-size: 1.4rem;">Game Setup</h1>
     <div class="card">
-      <label style="font-size: 0.85rem; color: var(--muted);">Opponent Name</label>
+      <label style="font-size: 0.75rem; color: var(--muted); margin-bottom: 2px; display: block;">Opponent Name</label>
       <input type="text" id="opponent-input" placeholder="e.g. Pitches Be Crazy" value="Opponent">
 
-      <label style="font-size: 0.85rem; color: var(--muted);">Batting Lineup (Use ▼ ▲ to Reorder)</label>
+      <label style="font-size: 0.75rem; color: var(--muted); margin-bottom: 2px; display: block;">Batting Lineup (Use ▼ ▲ to Reorder)</label>
       <div class="roster-input-group">
         <input type="text" id="player-name-input" placeholder="Add guest player..." style="margin: 0;">
-        <button onclick="addPlayer()" style="width: auto; padding: 0 20px;">Add</button>
+        <button onclick="addPlayer()" style="width: auto; padding: 0 16px;">Add</button>
       </div>
+      
+      <!-- Compact List that scrolls internally if needed -->
       <ul id="lineup-list" class="roster-list"></ul>
 
-      <button onclick="startGame()" class="btn-success btn-full" style="padding: 16px; font-size: 1.1rem;">Start Game</button>
+      <button onclick="startGame()" class="btn-success btn-full" style="padding: 12px; font-size: 1rem; margin-top: auto;">Start Game</button>
     </div>
   </div>
 
   <!-- 2. LIVE GAME SCREEN -->
   <div id="game-screen" class="screen-container hidden">
-    <h2>Dugout Tracker</h2>
+    <h2 style="font-size: 1.2rem;">Dugout Tracker</h2>
     
     <div class="card">
       <div class="at-bat-header">
-        <div style="font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;">Now Batting</div>
+        <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;">Now Batting</div>
         <div id="current-batter" class="batter-name">-</div>
         <div id="on-deck-batter" class="on-deck">On Deck: -</div>
       </div>
@@ -322,9 +333,9 @@
         </div>
       </div>
       
-      <div style="display: flex; gap: 10px;">
-        <button onclick="undoLast()" class="btn-secondary btn-full" style="margin:0; padding: 12px;">Undo Last</button>
-        <button onclick="endGame()" class="btn-danger btn-full" style="margin:0; padding: 12px;">End Game</button>
+      <div style="display: flex; gap: 8px;">
+        <button onclick="undoLast()" class="btn-secondary btn-full" style="margin:0; padding: 10px;">Undo Last</button>
+        <button onclick="endGame()" class="btn-danger btn-full" style="margin:0; padding: 10px;">End Game</button>
       </div>
     </div>
 
@@ -356,10 +367,10 @@
   <div id="non-rbi-modal" class="modal-overlay hidden">
     <div class="modal-content">
       <h3>Did a run score on this play?</h3>
-      <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 16px; text-align: center;">(No RBI will be awarded to the batter)</p>
-      <div style="display: flex; gap: 12px;">
-        <button onclick="handleNonRbiResponse(false)" class="btn-secondary btn-full" style="padding: 16px;">No</button>
-        <button onclick="handleNonRbiResponse(true)" class="btn-success btn-full" style="padding: 16px;">Yes</button>
+      <p style="font-size: 0.8rem; color: var(--muted); margin-bottom: 12px; text-align: center;">(No RBI will be awarded to the batter)</p>
+      <div style="display: flex; gap: 10px;">
+        <button onclick="handleNonRbiResponse(false)" class="btn-secondary btn-full" style="padding: 12px;">No</button>
+        <button onclick="handleNonRbiResponse(true)" class="btn-success btn-full" style="padding: 12px;">Yes</button>
       </div>
     </div>
   </div>
@@ -368,20 +379,19 @@
   <div id="who-scored-modal" class="modal-overlay hidden">
     <div class="modal-content">
       <h3>Who Scored?</h3>
-      <p id="who-scored-subtitle" style="font-size: 0.85rem; color: var(--muted); margin-bottom: 10px; text-align: center;">Select runner(s):</p>
+      <p id="who-scored-subtitle" style="font-size: 0.8rem; color: var(--muted); margin-bottom: 8px; text-align: center;">Select runner(s):</p>
       
-      <!-- Taller container allows seeing whole roster without scrolling -->
       <div id="runner-list" style="max-height: 60dvh; flex: 1; overflow-y: auto; padding-right: 2px;"></div>
       
-      <button onclick="confirmRunners()" class="btn-success btn-full" style="margin-top: 10px; padding: 14px;">Confirm & Save</button>
+      <button onclick="confirmRunners()" class="btn-success btn-full" style="margin-top: 8px; padding: 12px;">Confirm & Save</button>
     </div>
   </div>
 
   <!-- 3. SUMMARY & CSV EXPORT SCREEN -->
   <div id="summary-screen" class="screen-container hidden">
-    <h1>Game Box Score</h1>
+    <h1 style="font-size: 1.4rem;">Game Box Score</h1>
     <div class="card">
-      <div id="summary-meta" style="text-align: center; color: var(--muted); margin-bottom: 12px;"></div>
+      <div id="summary-meta" style="text-align: center; color: var(--muted); margin-bottom: 8px; font-size: 0.85rem;"></div>
       
       <div style="flex: 1; overflow-y: auto;">
         <table>
@@ -394,8 +404,8 @@
         </table>
       </div>
 
-      <button onclick="exportCSV()" class="btn-success btn-full" style="padding: 16px; margin-top: 16px;">Export Game to CSV</button>
-      <button onclick="resetApp()" class="btn-secondary btn-full" style="padding: 14px;">Start New Game</button>
+      <button onclick="exportCSV()" class="btn-success btn-full" style="padding: 12px; margin-top: 10px;">Export Game to CSV</button>
+      <button onclick="resetApp()" class="btn-secondary btn-full" style="padding: 10px;">Start New Game</button>
     </div>
   </div>
 
