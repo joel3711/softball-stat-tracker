@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Rec Softball Stat Tracker</title>
   
   <!-- PWA & Mobile Icons -->
@@ -31,13 +31,44 @@
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background-color: var(--bg); color: var(--text); padding: 16px; max-width: 500px; margin: 0 auto; }
+    
+    html, body {
+      height: 100%;
+      height: 100dvh;
+      background-color: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
 
-    h1, h2, h3 { text-align: center; margin-bottom: 12px; }
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+    body {
+      padding: 12px;
+      padding-top: max(12px, env(safe-area-inset-top));
+      padding-bottom: max(12px, env(safe-area-inset-bottom));
+      display: flex;
+      flex-direction: column;
+    }
+
+    h1, h2, h3 { text-align: center; margin-bottom: 8px; }
+
+    .screen-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      width: 100%;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
 
     /* Buttons */
-    button { background: var(--accent); color: var(--text); border: none; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: 0.1s; }
+    button { background: var(--accent); color: var(--text); border: none; padding: 12px; border-radius: 10px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: 0.1s; }
     button:active { transform: scale(0.97); }
     .btn-secondary { background: #475569; }
     .btn-danger { background: var(--danger); }
@@ -45,50 +76,60 @@
     .btn-full { width: 100%; margin-top: 8px; }
 
     /* Inputs */
-    input { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border); background: #0f172a; color: var(--text); margin-bottom: 12px; font-size: 1rem; }
+    input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: #0f172a; color: var(--text); margin-bottom: 12px; font-size: 1rem; }
 
     /* Roster Setup */
     .roster-input-group { display: flex; gap: 8px; margin-bottom: 8px; }
-    .roster-list { list-style: none; margin-bottom: 12px; }
-    .roster-item { display: flex; justify-content: space-between; align-items: center; background: #0f172a; padding: 8px 12px; border-radius: 6px; margin-bottom: 6px; font-size: 0.95rem; }
+    .roster-list { list-style: none; margin-bottom: 12px; flex: 1; overflow-y: auto; }
+    .roster-item { display: flex; justify-content: space-between; align-items: center; background: #0f172a; padding: 10px 14px; border-radius: 8px; margin-bottom: 6px; font-size: 1rem; }
 
     /* At-Bat Header */
-    .at-bat-header { text-align: center; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 16px; }
-    .batter-name { font-size: 1.5rem; font-weight: bold; color: #38bdf8; }
-    .on-deck { color: var(--muted); font-size: 0.85rem; margin-top: 4px; }
+    .at-bat-header { text-align: center; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 12px; }
+    .batter-name { font-size: 1.8rem; font-weight: bold; color: #38bdf8; }
+    .on-deck { color: var(--muted); font-size: 0.95rem; margin-top: 2px; }
 
-    /* Custom 3-Row Outcome Grids */
-    .outcome-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
-    .grid-row { display: grid; gap: 10px; }
+    /* Full-Screen 3-Row Outcome Grids */
+    .outcome-grid { display: flex; flex-direction: column; gap: 10px; flex: 1; margin-bottom: 12px; }
+    .grid-row { display: grid; gap: 10px; flex: 1; }
     .row-4 { grid-template-columns: repeat(4, 1fr); }
     .row-3 { grid-template-columns: repeat(3, 1fr); }
     
-    .grid-btn { background: #334155; padding: 18px 4px; font-size: 1.1rem; text-align: center; font-weight: bold; }
+    .grid-btn { 
+      background: #334155; 
+      font-size: 1.25rem; 
+      font-weight: 800; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      border-radius: 12px;
+      height: 100%;
+      padding: 0;
+    }
     .grid-btn:active { background: var(--accent); }
 
     /* Modal Styling */
     .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; padding: 16px; z-index: 100; }
-    .modal-content { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; width: 100%; max-width: 400px; }
+    .modal-content { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; width: 100%; max-width: 400px; }
     
     .chip-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 16px 0; }
-    .chip-btn { background: #334155; padding: 16px 0; font-size: 1.2rem; }
+    .chip-btn { background: #334155; padding: 18px 0; font-size: 1.3rem; border-radius: 10px; }
 
-    .runner-chip { display: flex; justify-content: space-between; padding: 12px; background: #0f172a; border-radius: 6px; margin-bottom: 8px; cursor: pointer; font-size: 1rem; }
+    .runner-chip { display: flex; justify-content: space-between; padding: 14px; background: #0f172a; border-radius: 8px; margin-bottom: 8px; cursor: pointer; font-size: 1.1rem; }
     .runner-chip.selected { background: var(--success); }
 
     /* Summary Table */
-    table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 0.8rem; }
-    th, td { padding: 6px 2px; text-align: center; border-bottom: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 0.85rem; }
+    th, td { padding: 8px 4px; text-align: center; border-bottom: 1px solid var(--border); }
     th { color: var(--muted); }
     td:first-child, th:first-child { text-align: left; }
 
-    .hidden { display: none; }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
 
   <!-- 1. SETUP SCREEN -->
-  <div id="setup-screen">
+  <div id="setup-screen" class="screen-container">
     <h1>Game Setup</h1>
     <div class="card">
       <label style="font-size: 0.85rem; color: var(--muted);">Opponent Name</label>
@@ -97,16 +138,16 @@
       <label style="font-size: 0.85rem; color: var(--muted);">Batting Lineup</label>
       <div class="roster-input-group">
         <input type="text" id="player-name-input" placeholder="Player Name" style="margin: 0;">
-        <button onclick="addPlayer()" style="width: auto;">Add</button>
+        <button onclick="addPlayer()" style="width: auto; padding: 0 20px;">Add</button>
       </div>
       <ul id="lineup-list" class="roster-list"></ul>
 
-      <button onclick="startGame()" class="btn-success btn-full">Start Game</button>
+      <button onclick="startGame()" class="btn-success btn-full" style="padding: 16px; font-size: 1.1rem;">Start Game</button>
     </div>
   </div>
 
   <!-- 2. LIVE GAME SCREEN -->
-  <div id="game-screen" class="hidden">
+  <div id="game-screen" class="screen-container hidden">
     <h2>Dugout Tracker</h2>
     
     <div class="card">
@@ -116,7 +157,7 @@
         <div id="on-deck-batter" class="on-deck">On Deck: -</div>
       </div>
 
-      <!-- Play Results Grid (Strict 3-Row Layout) -->
+      <!-- Play Results Grid (Fills Vertical Space) -->
       <div class="outcome-grid">
         <!-- Row 1: 1B, 2B, 3B, HR -->
         <div class="grid-row row-4">
@@ -139,9 +180,9 @@
         </div>
       </div>
       
-      <div style="display: flex; gap: 8px; margin-top: 12px;">
-        <button onclick="undoLast()" class="btn-secondary btn-full" style="margin:0;">Undo Last</button>
-        <button onclick="endGame()" class="btn-danger btn-full" style="margin:0;">End Game</button>
+      <div style="display: flex; gap: 10px;">
+        <button onclick="undoLast()" class="btn-secondary btn-full" style="margin:0; padding: 14px;">Undo Last</button>
+        <button onclick="endGame()" class="btn-danger btn-full" style="margin:0; padding: 14px;">End Game</button>
       </div>
     </div>
   </div>
@@ -167,8 +208,8 @@
       <h3>Did a run score on this play?</h3>
       <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 16px; text-align: center;">(No RBI will be awarded to the batter)</p>
       <div style="display: flex; gap: 12px;">
-        <button onclick="handleNonRbiResponse(false)" class="btn-secondary btn-full">No</button>
-        <button onclick="handleNonRbiResponse(true)" class="btn-success btn-full">Yes</button>
+        <button onclick="handleNonRbiResponse(false)" class="btn-secondary btn-full" style="padding: 16px;">No</button>
+        <button onclick="handleNonRbiResponse(true)" class="btn-success btn-full" style="padding: 16px;">Yes</button>
       </div>
     </div>
   </div>
@@ -178,18 +219,18 @@
     <div class="modal-content">
       <h3>Who Scored?</h3>
       <p id="who-scored-subtitle" style="font-size: 0.85rem; color: var(--muted); margin-bottom: 12px; text-align: center;">Select runner(s):</p>
-      <div id="runner-list"></div>
-      <button onclick="confirmRunners()" class="btn-success btn-full" style="margin-top: 12px;">Confirm & Save</button>
+      <div id="runner-list" style="max-height: 250px; overflow-y: auto;"></div>
+      <button onclick="confirmRunners()" class="btn-success btn-full" style="margin-top: 12px; padding: 16px;">Confirm & Save</button>
     </div>
   </div>
 
   <!-- 3. SUMMARY & CSV EXPORT SCREEN -->
-  <div id="summary-screen" class="hidden">
+  <div id="summary-screen" class="screen-container hidden">
     <h1>Game Box Score</h1>
     <div class="card">
       <div id="summary-meta" style="text-align: center; color: var(--muted); margin-bottom: 12px;"></div>
       
-      <div style="max-height: 280px; overflow-y: auto;">
+      <div style="flex: 1; overflow-y: auto;">
         <table>
           <thead>
             <tr>
@@ -201,7 +242,7 @@
       </div>
 
       <button onclick="exportCSV()" class="btn-success btn-full" style="padding: 16px; margin-top: 16px;">Export Game to CSV</button>
-      <button onclick="resetApp()" class="btn-secondary btn-full">Start New Game</button>
+      <button onclick="resetApp()" class="btn-secondary btn-full" style="padding: 14px;">Start New Game</button>
     </div>
   </div>
 
