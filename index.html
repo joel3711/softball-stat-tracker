@@ -760,7 +760,769 @@
       }).join('');
     }
 
-    // CSV Generation & Download (Pure Raw Counting Stats Only)
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <!-- Completely lock scale & disable user zoom -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Rec Softball Stat Tracker</title>
+  
+  <!-- PWA & Mobile Icons -->
+  <link rel="apple-touch-icon" href="./app-icon-v2.png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+
+    // Disable pinch zoom on iOS WebKit
+    document.addEventListener('gesturestart', function (e) {
+      e.preventDefault();
+    });
+    document.addEventListener('gesturechange', function (e) {
+      e.preventDefault();
+    });
+    document.addEventListener('gestureend', function (e) {
+      e.preventDefault();
+    });
+  </script>
+
+  <style>
+    :root {
+      --bg: #121826;
+      --card: #1b2436;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --border: #334155;
+      --success: #16a34a;
+      --danger: #dc2626;
+    }
+
+    * { 
+      box-sizing: border-box; 
+      margin: 0; 
+      padding: 0; 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      touch-action: manipulation; /* Disables double-tap zoom globally */
+      -webkit-tap-highlight-color: transparent; /* Removes gray flash on tap */
+      -webkit-user-select: none; /* Disables text selection popups when tapping fast */
+      user-select: none;
+    }
+
+    /* Re-enable text selection for input fields */
+    input {
+      -webkit-user-select: auto;
+      user-select: auto;
+    }
+
+    html, body {
+      height: 100%;
+      height: 100dvh;
+      background-color: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    body {
+      padding: 10px;
+      padding-top: max(10px, env(safe-area-inset-top));
+      padding-bottom: max(10px, env(safe-area-inset-bottom));
+      display: flex;
+      flex-direction: column;
+    }
+
+    h1, h2, h3 { text-align: center; margin-bottom: 6px; }
+
+    .screen-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0; /* Allows flex child scrolling without overflow */
+    }
+
+    /* Buttons */
+    button { background: var(--accent); color: var(--text); border: none; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 0.95rem; cursor: pointer; transition: 0.1s; }
+    button:active { transform: scale(0.97); }
+    .btn-secondary { background: #475569; }
+    .btn-danger { background: var(--danger); }
+    .btn-success { background: var(--success); }
+    .btn-full { width: 100%; margin-top: 6px; }
+
+    /* Inputs */
+    input { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); background: #0f172a; color: var(--text); margin-bottom: 6px; font-size: 0.9rem; }
+
+    /* Roster Setup Compact Styling */
+    .roster-input-group { display: flex; gap: 6px; margin-bottom: 6px; }
+    .roster-list { 
+      list-style: none; 
+      margin-bottom: 8px; 
+      flex: 1; 
+      min-height: 0; 
+      overflow-y: auto; 
+      padding-right: 2px;
+    }
+    .roster-item { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      background: #0f172a; 
+      padding: 5px 8px; 
+      border-radius: 6px; 
+      margin-bottom: 3px; 
+      font-size: 0.85rem;
+      transition: background-color 0.2s ease;
+    }
+    
+    .roster-actions { display: flex; align-items: center; gap: 4px; }
+    .move-btn { background: #334155; color: var(--text); padding: 3px 7px; border-radius: 4px; font-size: 0.75rem; }
+    .move-placeholder { visibility: hidden; pointer-events: none; }
+    .remove-btn { color: var(--danger); cursor: pointer; font-weight: bold; padding: 0 4px; font-size: 1rem; }
+
+    /* Swap Animations & Visual Feedback */
+    .slide-up {
+      animation: slideUpAnim 0.15s ease-out forwards;
+      background-color: var(--accent) !important;
+    }
+
+    .slide-down {
+      animation: slideDownAnim 0.15s ease-out forwards;
+      background-color: var(--accent) !important;
+    }
+
+    @keyframes slideUpAnim {
+      0% { transform: translateY(20px); opacity: 0.5; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes slideDownAnim {
+      0% { transform: translateY(-20px); opacity: 0.5; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+
+    /* At-Bat Header */
+    .at-bat-header { text-align: center; border-bottom: 1px solid var(--border); padding-bottom: 6px; margin-bottom: 8px; }
+    .batter-name { font-size: 1.6rem; font-weight: bold; color: #38bdf8; }
+    .on-deck { color: var(--muted); font-size: 0.9rem; margin-top: 2px; }
+
+    /* Full-Screen 3-Row Outcome Grids */
+    .outcome-grid { display: flex; flex-direction: column; gap: 8px; flex: 1; margin-bottom: 8px; }
+    .grid-row { display: grid; gap: 8px; flex: 1; }
+    .row-4 { grid-template-columns: repeat(4, 1fr); }
+    .row-3 { grid-template-columns: repeat(3, 1fr); }
+    
+    .grid-btn { 
+      background: #334155; 
+      font-size: 1.25rem; 
+      font-weight: 800; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      border-radius: 12px;
+      height: 100%;
+      padding: 0;
+    }
+    .grid-btn:active { background: var(--accent); }
+
+    /* Horizontal Compact Game Log Ticker */
+    .game-log-card {
+      margin-top: 6px;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 6px 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow: hidden;
+    }
+
+    .game-log-title {
+      font-size: 0.7rem;
+      font-weight: bold;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+      border-right: 1px solid var(--border);
+      padding-right: 6px;
+    }
+
+    .game-log-list {
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow-x: auto;
+      white-space: nowrap;
+      scrollbar-width: none; /* Hide scrollbar Firefox */
+      -ms-overflow-style: none; /* Hide scrollbar IE/Edge */
+    }
+
+    .game-log-list::-webkit-scrollbar {
+      display: none; /* Hide scrollbar Chrome/Safari */
+    }
+
+    .game-log-item {
+      font-size: 0.85rem;
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .game-log-item:first-child {
+      color: #38bdf8; /* Highlight the most recent action */
+      font-weight: 600;
+    }
+
+    .game-log-divider {
+      color: var(--border);
+      font-size: 0.8rem;
+    }
+
+    .game-log-empty {
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    /* Modal Styling */
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; padding: 16px; z-index: 100; }
+    .modal-content { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; width: 100%; max-width: 420px; max-height: 90dvh; display: flex; flex-direction: column; }
+    
+    .chip-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 12px 0; }
+    .chip-btn { background: #334155; padding: 16px 0; font-size: 1.2rem; border-radius: 10px; }
+
+    /* Expanded & Compact Runner Chips inside Modal */
+    .runner-chip { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center;
+      padding: 8px 12px; 
+      background: #0f172a; 
+      border-radius: 8px; 
+      margin-bottom: 4px; 
+      cursor: pointer; 
+      font-size: 0.95rem; 
+      border: 1px solid transparent;
+    }
+    .runner-chip.selected { 
+      background: var(--success); 
+      border-color: #22c55e;
+      font-weight: bold;
+    }
+
+    /* Summary Table */
+    table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 0.85rem; }
+    th, td { padding: 6px 4px; text-align: center; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); }
+    td:first-child, th:first-child { text-align: left; }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <!-- 1. SETUP SCREEN -->
+  <div id="setup-screen" class="screen-container">
+    <h1 style="font-size: 1.4rem;">Game Setup</h1>
+    <div class="card">
+      <label style="font-size: 0.75rem; color: var(--muted); margin-bottom: 2px; display: block;">Opponent Name</label>
+      <input type="text" id="opponent-input" placeholder="e.g. Pitches Be Crazy" value="Opponent">
+
+      <label style="font-size: 0.75rem; color: var(--muted); margin-bottom: 2px; display: block;">Batting Lineup (Use ▼ ▲ to Reorder)</label>
+      <div class="roster-input-group">
+        <input type="text" id="player-name-input" placeholder="Add guest player..." style="margin: 0;">
+        <button onclick="addPlayer()" style="width: auto; padding: 0 16px;">Add</button>
+      </div>
+      
+      <!-- Compact List that scrolls internally if needed -->
+      <ul id="lineup-list" class="roster-list"></ul>
+
+      <button onclick="startGame()" class="btn-success btn-full" style="padding: 12px; font-size: 1rem; margin-top: auto;">Start Game</button>
+    </div>
+  </div>
+
+  <!-- 2. LIVE GAME SCREEN -->
+  <div id="game-screen" class="screen-container hidden">
+    <h2 style="font-size: 1.2rem;">Dugout Tracker</h2>
+    
+    <div class="card">
+      <div class="at-bat-header">
+        <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;">Now Batting</div>
+        <div id="current-batter" class="batter-name">-</div>
+        <div id="on-deck-batter" class="on-deck">On Deck: -</div>
+      </div>
+
+      <!-- Play Results Grid (Fills Vertical Space) -->
+      <div class="outcome-grid">
+        <!-- Row 1: 1B, 2B, 3B, HR -->
+        <div class="grid-row row-4">
+          <button class="grid-btn" onclick="handleOutcomeSelect('1B')">1B</button>
+          <button class="grid-btn" onclick="handleOutcomeSelect('2B')">2B</button>
+          <button class="grid-btn" onclick="handleOutcomeSelect('3B')">3B</button>
+          <button class="grid-btn" onclick="handleOutcomeSelect('HR')">HR</button>
+        </div>
+        <!-- Row 2: BB, OUT, K -->
+        <div class="grid-row row-3">
+          <button class="grid-btn" onclick="handleOutcomeSelect('BB')">BB</button>
+          <button class="grid-btn" onclick="handleOutcomeSelect('OUT')">OUT</button>
+          <button class="grid-btn" onclick="handleOutcomeSelect('K')">K</button>
+        </div>
+        <!-- Row 3: SAC, ROE, FC -->
+        <div class="grid-row row-3">
+          <button class="grid-btn" onclick="handleOutcomeSelect('SAC')">SAC</button>
+          <button class="grid-btn" onclick="handleOutcomeSelect('ROE')">ROE</button>
+          <button class="grid-btn" onclick="handleOutcomeSelect('FC')">FC</button>
+        </div>
+      </div>
+      
+      <div style="display: flex; gap: 8px;">
+        <button onclick="undoLast()" class="btn-secondary btn-full" style="margin:0; padding: 10px;">Undo Last</button>
+        <button onclick="endGame()" class="btn-danger btn-full" style="margin:0; padding: 10px;">End Game</button>
+      </div>
+    </div>
+
+    <!-- Live Game Log Horizontal Bottom Ticker -->
+    <div class="game-log-card">
+      <div class="game-log-title">LOG</div>
+      <ul id="game-log-ticker" class="game-log-list">
+        <li class="game-log-empty">No plays logged yet.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- MODAL 1: SELECT RBIs (0-4) -->
+  <div id="rbi-count-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <h3 id="rbi-modal-title">How many RBIs?</h3>
+      <div class="chip-grid">
+        <button class="chip-btn" onclick="submitRbiCount(0)">0</button>
+        <button class="chip-btn" onclick="submitRbiCount(1)">1</button>
+        <button class="chip-btn" onclick="submitRbiCount(2)">2</button>
+        <button class="chip-btn" onclick="submitRbiCount(3)">3</button>
+        <button class="chip-btn" onclick="submitRbiCount(4)">4</button>
+      </div>
+      <button onclick="closeModals()" class="btn-secondary btn-full">Cancel</button>
+    </div>
+  </div>
+
+  <!-- MODAL 2: NON-RBI RUN SCORED? (FOR ROE & FC) -->
+  <div id="non-rbi-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <h3>Did a run score on this play?</h3>
+      <p style="font-size: 0.8rem; color: var(--muted); margin-bottom: 12px; text-align: center;">(No RBI will be awarded to the batter)</p>
+      <div style="display: flex; gap: 10px;">
+        <button onclick="handleNonRbiResponse(false)" class="btn-secondary btn-full" style="padding: 12px;">No</button>
+        <button onclick="handleNonRbiResponse(true)" class="btn-success btn-full" style="padding: 12px;">Yes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: WHO SCORED THE RUN(S)? -->
+  <div id="who-scored-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <h3>Who Scored?</h3>
+      <p id="who-scored-subtitle" style="font-size: 0.8rem; color: var(--muted); margin-bottom: 8px; text-align: center;">Select runner(s):</p>
+      
+      <div id="runner-list" style="max-height: 60dvh; flex: 1; overflow-y: auto; padding-right: 2px;"></div>
+      
+      <button onclick="confirmRunners()" class="btn-success btn-full" style="margin-top: 8px; padding: 12px;">Confirm & Save</button>
+    </div>
+  </div>
+
+  <!-- 3. SUMMARY & CSV EXPORT SCREEN -->
+  <div id="summary-screen" class="screen-container hidden">
+    <h1 style="font-size: 1.4rem;">Game Box Score</h1>
+    <div class="card">
+      <div id="summary-meta" style="text-align: center; color: var(--muted); margin-bottom: 8px; font-size: 0.85rem;"></div>
+      
+      <div style="flex: 1; overflow-y: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Player</th><th>AB</th><th>H</th><th>R</th><th>RBI</th><th>BB</th><th>AVG</th><th>OPS</th>
+            </tr>
+          </thead>
+          <tbody id="summary-table-body"></tbody>
+        </table>
+      </div>
+
+      <button onclick="exportCSV()" class="btn-success btn-full" style="padding: 12px; margin-top: 10px;">Export Game to CSV</button>
+      <button onclick="resetApp()" class="btn-secondary btn-full" style="padding: 10px;">Start New Game</button>
+    </div>
+  </div>
+
+  <script>
+    // Default Team Roster
+    const DEFAULT_ROSTER = [
+      "Joel Hoffler",
+      "Cori Hoffler",
+      "Anna Devereaux",
+      "Camden Sprinkle",
+      "Cody Martinez",
+      "Collin Sprinkle",
+      "Dawson Larrimore",
+      "Erin Edmoundson",
+      "Jacob Henderson",
+      "Joel Hall",
+      "Mya Horne",
+      "Riley Redmon"
+    ];
+
+    // App State
+    let players = [...DEFAULT_ROSTER];
+    let currentBatterIdx = 0;
+    let currentOutcome = null;
+    let pendingRbis = 0;
+    let selectedScorers = [];
+    let gameLogs = []; 
+
+    // Track recently moved player indices for animation
+    let lastSwappedUpIdx = null;
+    let lastSwappedDownIdx = null;
+
+    // Initialize Lineup on Load
+    window.addEventListener('DOMContentLoaded', () => {
+      renderLineup();
+      
+      // Allow 'Enter' key in input to add guest
+      document.getElementById('player-name-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          addPlayer();
+        }
+      });
+    });
+
+    // Helper: Formats player names dynamically to handle first/last name duplicates
+    function getFormattedName(fullName) {
+      const parts = fullName.trim().split(' ');
+      if (parts.length < 2) return fullName;
+
+      const firstName = parts[0];
+      const lastName = parts.slice(1).join(' ');
+
+      const hasDuplicateLastName = players.some(p => p !== fullName && p.trim().split(' ').slice(1).join(' ') === lastName);
+      const hasDuplicateFirstName = players.some(p => p !== fullName && p.trim().split(' ')[0] === firstName);
+
+      if (hasDuplicateLastName || hasDuplicateFirstName) {
+        return fullName;
+      }
+
+      return lastName;
+    }
+
+    // Setup functions
+    function addPlayer() {
+      const input = document.getElementById('player-name-input');
+      const name = input.value.trim();
+      if (name) {
+        players.push(name);
+        input.value = '';
+        renderLineup();
+      }
+    }
+
+    function renderLineup() {
+      const list = document.getElementById('lineup-list');
+      list.innerHTML = players.map((p, i) => {
+        let animClass = '';
+        if (i === lastSwappedUpIdx) animClass = 'slide-up';
+        if (i === lastSwappedDownIdx) animClass = 'slide-down';
+
+        const downBtn = i < players.length - 1 
+          ? `<button class="move-btn" onclick="movePlayer(${i}, 1)">▼</button>`
+          : `<button class="move-btn move-placeholder">▼</button>`;
+
+        const upBtn = i > 0 
+          ? `<button class="move-btn" onclick="movePlayer(${i}, -1)">▲</button>`
+          : `<button class="move-btn move-placeholder">▲</button>`;
+
+        return `
+          <li class="roster-item ${animClass}">
+            <span><strong>${i + 1}.</strong> ${p}</span>
+            <div class="roster-actions">
+              ${downBtn}
+              ${upBtn}
+              <span class="remove-btn" onclick="removePlayer(${i})">✕</span>
+            </div>
+          </li>
+        `;
+      }).join('');
+
+      lastSwappedUpIdx = null;
+      lastSwappedDownIdx = null;
+    }
+
+    function movePlayer(idx, direction) {
+      const newIndex = idx + direction;
+      if (newIndex < 0 || newIndex >= players.length) return;
+      
+      if (direction === -1) {
+        lastSwappedUpIdx = newIndex;
+        lastSwappedDownIdx = idx;
+      } else {
+        lastSwappedDownIdx = newIndex;
+        lastSwappedUpIdx = idx;
+      }
+
+      const temp = players[idx];
+      players[idx] = players[newIndex];
+      players[newIndex] = temp;
+      
+      renderLineup();
+    }
+
+    function removePlayer(idx) {
+      players.splice(idx, 1);
+      renderLineup();
+    }
+
+    function startGame() {
+      if (players.length === 0) {
+        alert("Please add at least one player to the lineup.");
+        return;
+      }
+      document.getElementById('setup-screen').classList.add('hidden');
+      document.getElementById('game-screen').classList.remove('hidden');
+      updateBatterDisplay();
+      renderGameLogTicker();
+    }
+
+    function updateBatterDisplay() {
+      document.getElementById('current-batter').innerText = `#${currentBatterIdx + 1} ${players[currentBatterIdx]}`;
+      const nextIdx = (currentBatterIdx + 1) % players.length;
+      document.getElementById('on-deck-batter').innerText = `On Deck: #${nextIdx + 1} ${players[nextIdx]}`;
+      
+      currentOutcome = null;
+      pendingRbis = 0;
+      selectedScorers = [];
+    }
+
+    function handleOutcomeSelect(outcome) {
+      currentOutcome = outcome;
+
+      if (outcome === 'K' || outcome === 'OUT') {
+        commitAtBat(0, []);
+        return;
+      }
+
+      if (['1B', '2B', '3B', 'HR', 'BB', 'SAC'].includes(outcome)) {
+        document.getElementById('rbi-modal-title').innerText = `${outcome} - How many RBIs?`;
+        document.getElementById('rbi-count-modal').classList.remove('hidden');
+        return;
+      }
+
+      if (['ROE', 'FC'].includes(outcome)) {
+        document.getElementById('non-rbi-modal').classList.remove('hidden');
+        return;
+      }
+    }
+
+    function submitRbiCount(count) {
+      pendingRbis = count;
+      document.getElementById('rbi-count-modal').classList.add('hidden');
+
+      if (count === 0) {
+        commitAtBat(0, []);
+      } else {
+        openWhoScoredModal(count);
+      }
+    }
+
+    function handleNonRbiResponse(runScored) {
+      document.getElementById('non-rbi-modal').classList.add('hidden');
+      
+      if (!runScored) {
+        commitAtBat(0, []);
+      } else {
+        pendingRbis = 0;
+        openWhoScoredModal(1);
+      }
+    }
+
+    function openWhoScoredModal(expectedRunners) {
+      const list = document.getElementById('runner-list');
+      selectedScorers = [];
+
+      if (currentOutcome === 'HR') {
+        selectedScorers.push(players[currentBatterIdx]);
+      }
+
+      document.getElementById('who-scored-subtitle').innerText = `Select player(s) who scored (${expectedRunners} expected):`;
+
+      list.innerHTML = players.map(p => `
+        <div class="runner-chip ${selectedScorers.includes(p) ? 'selected' : ''}" onclick="toggleRunner('${p}', this)">
+          <span>${p}</span>
+          <span class="chk">${selectedScorers.includes(p) ? '✓' : ''}</span>
+        </div>
+      `).join('');
+
+      document.getElementById('who-scored-modal').classList.remove('hidden');
+    }
+
+    function toggleRunner(player, el) {
+      if (selectedScorers.includes(player)) {
+        selectedScorers = selectedScorers.filter(p => p !== player);
+        el.classList.remove('selected');
+        el.querySelector('.chk').innerText = '';
+      } else {
+        selectedScorers.push(player);
+        el.classList.add('selected');
+        el.querySelector('.chk').innerText = '✓';
+      }
+    }
+
+    function confirmRunners() {
+      document.getElementById('who-scored-modal').classList.add('hidden');
+      commitAtBat(pendingRbis, selectedScorers);
+    }
+
+    function closeModals() {
+      document.getElementById('rbi-count-modal').classList.add('hidden');
+      document.getElementById('non-rbi-modal').classList.add('hidden');
+      document.getElementById('who-scored-modal').classList.add('hidden');
+    }
+
+    function commitAtBat(rbis, scorers) {
+      gameLogs.push({
+        batter: players[currentBatterIdx],
+        result: currentOutcome,
+        rbi: rbis,
+        scorers: scorers
+      });
+
+      currentBatterIdx = (currentBatterIdx + 1) % players.length;
+      updateBatterDisplay();
+      renderGameLogTicker();
+    }
+
+    function undoLast() {
+      if (gameLogs.length === 0) return;
+      gameLogs.pop();
+      currentBatterIdx = (currentBatterIdx - 1 + players.length) % players.length;
+      updateBatterDisplay();
+      renderGameLogTicker();
+    }
+
+    function renderGameLogTicker() {
+      const ticker = document.getElementById('game-log-ticker');
+      if (gameLogs.length === 0) {
+        ticker.innerHTML = '<li class="game-log-empty">No plays logged yet.</li>';
+        return;
+      }
+
+      ticker.innerHTML = gameLogs.slice().reverse().map((log, idx) => {
+        const displayName = getFormattedName(log.batter);
+        const rbiText = log.rbi > 0 ? ` (+${log.rbi})` : '';
+        const divider = idx < gameLogs.length - 1 ? '<span class="game-log-divider">|</span>' : '';
+        
+        return `
+          <li class="game-log-item">
+            <span>${displayName} - ${log.result}${rbiText}</span>
+            ${divider}
+          </li>
+        `;
+      }).join('');
+
+      ticker.scrollLeft = 0;
+    }
+
+    function endGame() {
+      if (gameLogs.length === 0 && !confirm("No stats logged. End game anyway?")) return;
+      
+      document.getElementById('game-screen').classList.add('hidden');
+      document.getElementById('summary-screen').classList.remove('hidden');
+      
+      const opponent = document.getElementById('opponent-input').value || 'Opponent';
+      const now = new Date();
+      const dateStr = `${now.getMonth() + 1}.${now.getDate()}.${now.getFullYear().toString().slice(-2)}`;
+      document.getElementById('summary-meta').innerText = `vs. ${opponent} • ${dateStr}`;
+
+      renderSummaryTable();
+    }
+
+    // Box Score Aggregator
+    function getAggregatedStats() {
+      const totals = {};
+      players.forEach(p => {
+        totals[p] = { PA: 0, AB: 0, R: 0, H: 0, '1B': 0, '2B': 0, '3B': 0, HR: 0, RBI: 0, BB: 0, K: 0, SAC: 0, ROE: 0, FC: 0 };
+      });
+
+      gameLogs.forEach(log => {
+        const stats = totals[log.batter];
+        if (!stats) return;
+
+        stats.PA += 1;
+        stats.RBI += log.rbi;
+
+        log.scorers.forEach(scorer => {
+          if (totals[scorer]) totals[scorer].R += 1;
+        });
+
+        const res = log.result;
+        if (['1B', '2B', '3B', 'HR'].includes(res)) { 
+          stats.H++; 
+          stats[res]++; 
+          stats.AB++; 
+        }
+        else if (['OUT', 'K', 'ROE', 'FC'].includes(res)) { 
+          stats.AB++; 
+          if (res === 'K') stats.K++; 
+          if (res === 'ROE') stats.ROE++; 
+          if (res === 'FC') stats.FC++; 
+        }
+        else if (res === 'BB') { stats.BB++; }
+        else if (res === 'SAC') { stats.SAC++; }
+      });
+
+      return totals;
+    }
+
+    function renderSummaryTable() {
+      const totals = getAggregatedStats();
+      const tbody = document.getElementById('summary-table-body');
+      
+      tbody.innerHTML = Object.keys(totals).map(p => {
+        const s = totals[p];
+        const tb = (s['1B'] * 1) + (s['2B'] * 2) + (s['3B'] * 3) + (s.HR * 4);
+        const avg = s.AB > 0 ? (s.H / s.AB).toFixed(3) : '.000';
+        const obp = s.PA > 0 ? ((s.H + s.BB) / s.PA).toFixed(3) : '.000';
+        const slg = s.AB > 0 ? (tb / s.AB).toFixed(3) : '.000';
+        const ops = (parseFloat(obp) + parseFloat(slg)).toFixed(3);
+
+        return `<tr>
+          <td>${p}</td>
+          <td>${s.AB}</td>
+          <td>${s.H}</td>
+          <td>${s.R}</td>
+          <td>${s.RBI}</td>
+          <td>${s.BB}</td>
+          <td>${avg.replace(/^0/, '')}</td>
+          <td>${ops}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    // Dynamic CSV Export Optimized for iOS Safari & PWA
     function exportCSV() {
       const opponentInput = document.getElementById('opponent-input').value.trim() || 'opponent';
       const cleanOpponent = opponentInput.toLowerCase().replace(/\s+/g, '_');
@@ -773,8 +1535,8 @@
       const fileName = `${m}.${d}.${yy}.${cleanOpponent}.csv`;
       const totals = getAggregatedStats();
       
-      let csvContent = "data:text/csv;charset=utf-8,";
-      csvContent += "Player,PA,AB,R,H,1B,2B,3B,HR,RBI,BB,K,SAC,ROE,FC,TB\n";
+      // 1. Build CSV content array
+      let csvLines = ["Player,PA,AB,R,H,1B,2B,3B,HR,RBI,BB,K,SAC,ROE,FC,TB"];
 
       Object.keys(totals).forEach(p => {
         const s = totals[p];
@@ -784,16 +1546,26 @@
           `"${p}"`,
           s.PA, s.AB, s.R, s.H, s['1B'], s['2B'], s['3B'], s.HR, s.RBI, s.BB, s.K, s.SAC, s.ROE, s.FC, tb
         ];
-        csvContent += row.join(",") + "\n";
+        csvLines.push(row.join(","));
       });
 
-      const encodedUri = encodeURI(csvContent);
+      const csvString = csvLines.join("\n");
+
+      // 2. Create a Blob with text/csv MIME type (Required for iOS WebKit)
+      const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+      const blobUrl = URL.createObjectURL(blob);
+
+      // 3. Trigger Download / Save Prompt
       const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
+      link.href = blobUrl;
       link.setAttribute("download", fileName);
+
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+
+      // Clean up object URL memory
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
     }
 
     function resetApp() {
@@ -806,6 +1578,9 @@
         document.getElementById('setup-screen').classList.remove('hidden');
       }
     }
+  </script>
+</body>
+</html>
   </script>
 </body>
 </html>
